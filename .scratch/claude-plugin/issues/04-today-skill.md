@@ -9,9 +9,13 @@ stories 23–27, and `CONTEXT.md` for the terms.
 
 **Status:** ready-for-agent
 
-- [ ] The Skill ships in the plugin, written in English, and instructs Claude to reply in the user's language
-- [ ] Its description makes Claude pick it for "today" questions and not for monthly reviews
-- [ ] Covers: working day with check-in only, with check-in and check-out, not yet checked in, and no Work shift today (e.g. Sunday)
-- [ ] Uses the Late arrival / Late warning definitions from `CONTEXT.md`
-- [ ] Read-only: never suggests it can check in on the user's behalf
+- [x] The Skill ships in the plugin, written in English, and instructs Claude to reply in the user's language
+- [x] Its description makes Claude pick it for "today" questions and not for monthly reviews
+- [x] Covers: working day with check-in only, with check-in and check-out, not yet checked in, and no Work shift today (e.g. Sunday)
+- [x] Uses the Late arrival / Late warning definitions from `CONTEXT.md`
+- [x] Read-only: never suggests it can check in on the user's behalf
 - [ ] Manual acceptance with `claude --plugin-dir .` on a working day and on a day off
+
+## Comments
+
+- Headless run of `/biso24:today` via `claude -p --plugin-dir .` on a working day (2026-09-28, not yet checked in) answered correctly. Day-off run still to do by hand.

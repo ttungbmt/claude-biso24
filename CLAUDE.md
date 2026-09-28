@@ -22,6 +22,8 @@ MCP server (TypeScript, stdio) wrapping the Biso24 API. Packages are managed wit
 ```
 .claude-plugin/   plugin.json (the `biso24` plugin: user config + inline MCP server running dist/index.js),
                   marketplace.json (the `ttungbmt` marketplace; keep plugin `version` equal to package.json)
+skills/<name>/    SKILL.md per Skill (today, timesheet), shipped with the plugin as /biso24:<name>;
+                  English, self-contained (CONTEXT.md is not shipped), tell Claude to reply in the user's language
 dist/index.js     committed bundle (tsdown; all dependencies inlined, needs only Node)
 src/
   index.ts        entry point, stdio transport (index.test.ts: spawns the committed bundle, staleness check)
