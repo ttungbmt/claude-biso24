@@ -23,6 +23,7 @@ mise.local.toml
 
 # Local tool settings
 .claude/settings.local.json
+.playwright-mcp/
 
 # OS
 .DS_Store
