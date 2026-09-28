@@ -1,0 +1,21 @@
+meta {
+  name: List request types
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{iamUrl}}/v1/request-managements
+  body: none
+  auth: inherit
+}
+
+assert {
+  res.status: eq 200
+}
+
+docs {
+  Catalog of request types (leave, overtime, business trip, shift swap…) configured for the organization.
+  Response `{ success, statusCode, message, data: [...] }`, not paginated.
+  Each type's `_id` is used when creating/filtering requests.
+}

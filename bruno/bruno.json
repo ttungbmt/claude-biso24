@@ -2,6 +2,5 @@
   "version": "1",
   "name": "biso24",
   "type": "collection",
-  "defaultEnvironment": "dev",
   "ignore": ["node_modules", ".git"]
 }

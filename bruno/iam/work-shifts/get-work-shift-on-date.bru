@@ -1,0 +1,24 @@
+meta {
+  name: Get work shift on date
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{iamUrl}}/v1/work-shift-employees/work-shift-current-date?currentDate=2026-09-28
+  body: none
+  auth: inherit
+}
+
+params:query {
+  currentDate: 2026-09-28
+}
+
+assert {
+  res.status: eq 200
+}
+
+docs {
+  Work shift of the logged-in employee (identified by the token) on a given date.
+  - `currentDate`: YYYY-MM-DD
+}

@@ -12,16 +12,16 @@
   ],
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
-    "dev": "tsx watch src/index.ts",
+    "dev": "mise exec -- tsx watch src/index.ts",
     "start": "node dist/index.js",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
     "lint": "biome check .",
     "format": "biome check --write .",
-    "inspect": "pnpm build && npx @modelcontextprotocol/inspector node dist/index.js",
+    "inspect": "pnpm build && mise exec -- npx @modelcontextprotocol/inspector node dist/index.js",
     "clean": "rm -rf dist",
-    "api": "cd bruno && bru run --env dev"
+    "api": "cd bruno && bru run"
   },
   "engines": {
     "node": ">=20"
