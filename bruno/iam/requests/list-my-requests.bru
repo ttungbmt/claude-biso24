@@ -1,0 +1,28 @@
+meta {
+  name: List my requests
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{iamUrl}}/v1/request-employees?limit=20&page=1&type=OWNER
+  body: none
+  auth: inherit
+}
+
+params:query {
+  limit: 20
+  page: 1
+  type: OWNER
+}
+
+assert {
+  res.status: eq 200
+}
+
+docs {
+  Paginated list of the logged-in employee's requests (identified by the token).
+  - `type=OWNER`: requests created by the employee (other values not verified)
+  - `page`: starts at 1
+  Response `data`: `{ data: [...], total, limit, page, totalPages, totalPendingApproval }`.
+}

@@ -2,3 +2,7 @@
 node = "lts"
 "npm:@usebruno/cli" = "latest"
 pnpm = "latest"
+
+[env]
+# Credentials live in the git-ignored .env; redact keeps them out of mise output.
+_.file = { path = ".env", redact = true }

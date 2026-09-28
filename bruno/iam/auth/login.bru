@@ -1,0 +1,43 @@
+meta {
+  name: Login
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{iamUrl}}/v1/auth/login
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "email": "{{process.env.BISO24_EMAIL}}",
+    "password": "{{process.env.BISO24_PASSWORD}}",
+    "from": "WORK_SPACE",
+    "orgId": "{{orgId}}"
+  }
+}
+
+script:post-response {
+  const data = res.body && res.body.data;
+  if (res.status !== 200 || !data || !data.token) {
+    const reason = (res.body && res.body.message) || `status ${res.status}`;
+    throw new Error(`Login failed (${reason}): token was not set. Check BISO24_* in the repo-root .env (bruno/.env links to it).`);
+  }
+  bru.setVar("token", data.token);
+  bru.setVar("employeeId", data.employeeId._id);
+}
+
+assert {
+  res.status: eq 200
+  res.body.data.token: isString
+}
+
+docs {
+  Logs in with the account from `bruno/.env` (a symlink to the repo-root `.env`) and stores the JWT
+  in `token` and the logged-in employee's id in `employeeId`; the other requests use them.
+  These are in-memory runtime variables: run Login again after the JWT expires (~24h, no refresh
+  flow) or after VS Code reloads the Bruno extension.
+  Response `data`: the user profile, `tenantInfo`, `token`, `refreshToken`.
+}

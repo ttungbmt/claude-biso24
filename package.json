@@ -7,21 +7,26 @@
   "bin": {
     "biso24-mcp-server": "dist/index.js"
   },
+  "imports": {
+    "#core/*": "./src/core/*.ts",
+    "#test/*": "./test/*.ts"
+  },
   "files": [
     "dist"
   ],
   "scripts": {
-    "build": "tsc -p tsconfig.build.json",
-    "dev": "tsx watch src/index.ts",
+    "build": "tsdown",
+    "dev": "mise exec -- tsx watch src/index.ts",
+    "mcp:dev": "claude mcp add --scope local biso24-dev -- mise exec -- node --import tsx src/index.ts",
     "start": "node dist/index.js",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
     "lint": "biome check .",
     "format": "biome check --write .",
-    "inspect": "pnpm build && npx @modelcontextprotocol/inspector node dist/index.js",
+    "inspect": "pnpm build && mise exec -- npx @modelcontextprotocol/inspector node dist/index.js",
     "clean": "rm -rf dist",
-    "api": "cd bruno && bru run --env dev"
+    "api": "cd bruno && bru run"
   },
   "engines": {
     "node": ">=20"
@@ -42,6 +47,7 @@
   "devDependencies": {
     "@biomejs/biome": "^2.5.14",
     "@types/node": "^26.6.3",
+    "tsdown": "^0.23.0",
     "tsx": "^4.23.15",
     "typescript": "^5.9.3",
     "vitest": "^5.0.2"

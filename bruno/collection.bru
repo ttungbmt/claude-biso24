@@ -3,15 +3,47 @@ headers {
   domain: {{domain}}
 }
 
+vars:pre-request {
+  iamUrl: {{process.env.BISO24_IAM_URL}}
+  domain: {{process.env.BISO24_DOMAIN}}
+  orgId: {{process.env.BISO24_ORG_ID}}
+}
+
+script:pre-request {
+  // Log in on demand so any request can run on its own (`bru run <file>.bru`).
+  // Skip the login request itself, and reuse a token that is still valid for 60s:
+  // the one set by the last login, else the optional seed BISO24_TOKEN from .env.
+  if (!req.getUrl().endsWith("/v1/auth/login")) {
+    const token = bru.getVar("token") || bru.getProcessEnv("BISO24_TOKEN");
+    // JWT payload is base64url; the script sandbox only decodes plain base64.
+    const payload = token ? token.split(".")[1].replace(/-/g, "+").replace(/_/g, "/") : null;
+    const claims = payload ? JSON.parse(Buffer.from(payload, "base64").toString()) : {};
+    const exp = claims.exp || 0;
+    if (exp * 1000 - Date.now() < 60000) {
+      await bru.runRequest("iam/auth/login");
+    } else {
+      bru.setVar("token", token);
+      // The JWT `id` claim is the logged-in employee's id (same as login's `data.employeeId._id`).
+      if (!bru.getVar("employeeId")) bru.setVar("employeeId", claims.id);
+    }
+  }
+}
+
 auth {
   mode: bearer
 }
 
 auth:bearer {
-  token: {{process.env.BISO24_TOKEN}}
+  token: {{token}}
 }
 
 docs {
-  Collection gọi thử Biso24 API trước khi bọc thành MCP tool.
-  Token lấy từ `bruno/.env` (BISO24_TOKEN) — không commit.
+  Try the Biso24 API here before wrapping it as an MCP tool.
+  Variables come from `bruno/.env`, a git-ignored symlink to the repo-root `.env` (the same file the
+  MCP server uses): collection vars `iamUrl`, `domain`, `orgId` and the login credentials.
+  Recreate it after cloning with `ln -s ../.env bruno/.env`. No Bruno environment is needed.
+  Any request can run on its own: the collection pre-request script runs `iam/auth/login` when
+  `{{token}}` is missing or about to expire; login stores `{{token}}` and `{{employeeId}}`.
+  An optional seed `BISO24_TOKEN` in `.env` is reused while valid; `{{employeeId}}` then comes
+  from its `id` claim.
 }
