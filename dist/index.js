@@ -22050,12 +22050,17 @@ function registerTimekeepingTools(server, client) {
 }
 //#endregion
 //#region src/modules/iam/work-shifts/work-shifts.api.ts
-/** Work shift of the logged-in employee on a date (YYYY-MM-DD). */
+/**
+* Work shift(s) of the logged-in employee on a date (YYYY-MM-DD); null when
+* the employee has no shift that day (e.g. weekends).
+*/
 function getWorkShiftOnDate(client, { date }) {
 	return client.get("v1/work-shift-employees/work-shift-current-date", { currentDate: date });
 }
 //#endregion
 //#region src/modules/iam/work-shifts/work-shifts.tools.ts
+/** Max per-date requests in flight when listing a month. */
+const MONTH_CONCURRENCY = 5;
 function registerWorkShiftTools(server, client) {
 	defineTool(server, {
 		name: "biso24_get_my_work_shift",
@@ -22065,13 +22070,67 @@ function registerWorkShiftTools(server, client) {
 		annotations: READ_ONLY,
 		handler: ({ date }) => getWorkShiftOnDate(client, { date: date ?? today() })
 	});
+	defineTool(server, {
+		name: "biso24_list_my_work_shifts",
+		title: "List my work shifts for a month",
+		description: "List the work shifts assigned to the logged-in employee (identified by the token) for every date of one month: date, shift code, shift name, start and end time (HH:mm, local time). Dates without a shift (e.g. weekends) are left out; public holidays may still show a shift. Use for month-level questions; for a single date use biso24_get_my_work_shift, for actual check-in/out records biso24_get_my_timekeeping.",
+		inputSchema: {
+			year: number().int().min(2e3).max(2100).optional().describe("4-digit year. Defaults to the current year."),
+			month: number().int().min(1).max(12).optional().describe("Month 1-12. Defaults to the current month.")
+		},
+		annotations: READ_ONLY,
+		handler: async (args) => {
+			const now = /* @__PURE__ */ new Date();
+			const year = args.year ?? now.getFullYear();
+			const month = args.month ?? now.getMonth() + 1;
+			return {
+				year,
+				month,
+				items: (await mapWithConcurrency(datesOfMonth(year, month), MONTH_CONCURRENCY, async (date) => (await getWorkShiftOnDate(client, { date }))?.map((shift) => summarizeShift(date, shift)) ?? [])).flat()
+			};
+		}
+	});
+}
+function summarizeShift(date, shift) {
+	const item = shift.workShiftItem;
+	return {
+		date,
+		code: item?.code ?? shift.workShiftCode,
+		name: item?.name ?? shift.workShiftName,
+		start: localTime(item?.workingTimes?.workingTime),
+		end: localTime(item?.endTimes?.endTime)
+	};
+}
+/** An ISO instant's time of day as HH:mm in the server's local time zone. */
+function localTime(instant) {
+	if (!instant) return void 0;
+	const time = new Date(instant);
+	return `${pad(time.getHours())}:${pad(time.getMinutes())}`;
+}
+/** Every date of the month as YYYY-MM-DD. */
+function datesOfMonth(year, month) {
+	const length = new Date(year, month, 0).getDate();
+	return Array.from({ length }, (_, i) => `${year}-${pad(month)}-${pad(i + 1)}`);
+}
+/** Like Promise.all over items.map(fn), with at most `limit` calls in flight. */
+async function mapWithConcurrency(items, limit, fn) {
+	const results = new Array(items.length);
+	let next = 0;
+	const worker = async () => {
+		while (next < items.length) {
+			const i = next++;
+			results[i] = await fn(items[i]);
+		}
+	};
+	await Promise.all(Array.from({ length: limit }, worker));
+	return results;
 }
 /** Today's date as YYYY-MM-DD in the server's local time zone. */
 function today() {
 	const now = /* @__PURE__ */ new Date();
-	const pad = (n) => String(n).padStart(2, "0");
 	return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
 }
+const pad = (n) => String(n).padStart(2, "0");
 //#endregion
 //#region src/modules/iam/index.ts
 /** IAM service (iam.biso24.org): employees, timekeeping, work shifts, requests. */

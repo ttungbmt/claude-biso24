@@ -17,6 +17,7 @@ describe("MCP server", () => {
       "biso24_get_my_timekeeping_summary",
       "biso24_get_my_work_shift",
       "biso24_list_my_requests",
+      "biso24_list_my_work_shifts",
       "biso24_list_request_types",
     ]);
     for (const tool of tools) {

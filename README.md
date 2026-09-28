@@ -57,7 +57,8 @@ All tools are read-only and act as the employee who owns the token.
 | `biso24_get_my_timekeeping` | My day-by-day timekeeping for a month |
 | `biso24_get_my_timekeeping_summary` | My yearly timekeeping summary |
 | `biso24_get_my_work_shift` | My work shift on a date |
-| `biso24_list_my_requests` | My requests (leave, overtime...), paginated |
+| `biso24_list_my_work_shifts` | My work shifts for every date of a month (dates without a shift left out) |
+| `biso24_list_my_requests` | My requests (leave, attendance correction, overtime...) as compact summaries, paginated |
 | `biso24_list_request_types` | Request types configured for the organization |
 
 ## Development
