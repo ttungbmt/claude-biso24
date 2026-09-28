@@ -1,0 +1,21 @@
+meta {
+  name: List request types
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{iamUrl}}/v1/request-managements
+  body: none
+  auth: inherit
+}
+
+assert {
+  res.status: eq 200
+}
+
+docs {
+  Danh mục loại đơn (nghỉ phép, làm thêm, công tác, đổi ca…) áp dụng cho tổ chức.
+  Response `{ success, statusCode, message, data: [...] }`, không phân trang.
+  `_id` của mỗi loại dùng khi tạo/lọc đơn.
+}

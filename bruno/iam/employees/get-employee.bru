@@ -1,0 +1,30 @@
+meta {
+  name: Get employee
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{iamUrl}}/v1/employees/:id?histories=true&profiles=true
+  body: none
+  auth: inherit
+}
+
+params:query {
+  histories: true
+  profiles: true
+}
+
+params:path {
+  id: {{employeeId}}
+}
+
+assert {
+  res.status: eq 200
+}
+
+docs {
+  Lấy chi tiết một nhân viên theo id.
+  - `histories=true`: kèm lịch sử công tác
+  - `profiles=true`: kèm hồ sơ
+}
