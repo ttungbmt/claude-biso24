@@ -1,0 +1,33 @@
+meta {
+  name: List requests to approve
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{iamUrl}}/v1/request-employees?limit=20&page=1&type=RESPONSIBLE
+  body: none
+  auth: inherit
+}
+
+params:query {
+  limit: 20
+  page: 1
+  type: RESPONSIBLE
+  ~requestCategoryCode: LEAVE
+}
+
+assert {
+  res.status: eq 200
+}
+
+docs {
+  Requests of other employees awaiting the logged-in employee's approval
+  (web app tab "Đơn cần duyệt", `/workspace/request-management?tab=RESPONSIBLE`).
+  Same endpoint, params and response as List my requests, with `type=RESPONSIBLE`.
+
+  - Only open requests (all `PROCESSING`): no history of requests I approved or rejected.
+  - `total` equals `totalPendingApproval`.
+  - Each item's `employeeDetail` (`fullName`, `staffCode`, `departmentName`, `positionName`) is the requester.
+  - `status` is unreliable here: `APPROVED`/`REJECTED` return 0 rows, and `NEW` returned more rows than no filter (16 vs 15).
+}

@@ -141,7 +141,7 @@ describe("request tools", () => {
       count: 2,
       offset: 0,
       has_more: false,
-      total_pending_approval: 1,
+      total_awaiting_my_approval: 1,
     });
     expect(resultText(result)).not.toMatch(/conditions|orgIds|dept-/);
   });
@@ -178,7 +178,7 @@ describe("request tools", () => {
       offset: 2,
       has_more: true,
       next_offset: 4,
-      total_pending_approval: 1,
+      total_awaiting_my_approval: 1,
     });
   });
 
@@ -194,6 +194,116 @@ describe("request tools", () => {
     expect(result.isError).toBe(true);
     expect(resultText(result)).toMatch(/multiple of limit/);
     expect(apiCalls(fetchMock)).toHaveLength(0);
+  });
+
+  it("biso24_list_my_requests passes the status and request type filters", async () => {
+    const fetchMock = routeFetch({
+      "/v1/request-employees": {
+        data: [],
+        total: 0,
+        limit: 20,
+        page: 1,
+        totalPages: 0,
+        totalPendingApproval: 0,
+      },
+      "/v1/request-managements": requestTypes,
+    });
+    const client = await connectTestClient(fetchMock);
+
+    await client.callTool({
+      name: "biso24_list_my_requests",
+      arguments: { status: "PROCESSING", request_type_code: "LEAVE" },
+    });
+
+    const { url } = fetchCall(fetchMock);
+    expect(Object.fromEntries(url.searchParams)).toEqual({
+      type: "OWNER",
+      page: "1",
+      limit: "20",
+      status: "PROCESSING",
+      requestCategoryCode: "LEAVE",
+    });
+  });
+
+  it("biso24_list_requests_to_approve lists requests awaiting my approval with their requester", async () => {
+    const awaitingMe = {
+      ...rejectedLeave,
+      _id: "r3",
+      employeeDetail: {
+        staffCode: "077",
+        fullName: "Team Member",
+        departmentName: "Engineering",
+      },
+      approvalSteps: [
+        { stepIndex: 1, stepTitle: "Create", status: "SENT", conditions },
+        {
+          stepIndex: 2,
+          stepTitle: "Direct manager",
+          status: "WAITING_FOR_APPROVAL",
+          conditions: [],
+        },
+      ],
+      status: "PROCESSING",
+      notes: "Family trip",
+    };
+    const fetchMock = routeFetch({
+      "/v1/request-employees": {
+        data: [awaitingMe],
+        total: 1,
+        limit: 20,
+        page: 1,
+        totalPages: 1,
+        totalPendingApproval: 1,
+      },
+      "/v1/request-managements": requestTypes,
+    });
+    const client = await connectTestClient(fetchMock);
+
+    const result = await client.callTool({
+      name: "biso24_list_requests_to_approve",
+      arguments: { request_type_code: "LEAVE" },
+    });
+
+    const { url } = fetchCall(fetchMock);
+    expect(url.pathname).toBe("/v1/request-employees");
+    expect(Object.fromEntries(url.searchParams)).toEqual({
+      type: "RESPONSIBLE",
+      page: "1",
+      limit: "20",
+      requestCategoryCode: "LEAVE",
+    });
+    expect(result.structuredContent).toEqual({
+      items: [
+        {
+          id: "r3",
+          type: { code: "LEAVE", name: "Leave" },
+          requester: {
+            name: "Team Member",
+            staff_code: "077",
+            department: "Engineering",
+          },
+          from: "2026-08-06",
+          to: "2026-08-07",
+          days: [
+            { date: "2026-08-06", part: "ALL_DAY" },
+            { date: "2026-08-07", part: "NOON_SHIFT" },
+          ],
+          status: "PROCESSING",
+          current_step: {
+            title: "Direct manager",
+            status: "WAITING_FOR_APPROVAL",
+          },
+          next_approver: { name: "Manager One", staff_code: "006" },
+          note: "Family trip",
+          created_at: "2026-08-01T02:00:00.000Z",
+        },
+      ],
+      total: 1,
+      count: 1,
+      offset: 0,
+      has_more: false,
+      total_awaiting_my_approval: 1,
+    });
   });
 
   it("biso24_list_request_types paginates client-side", async () => {

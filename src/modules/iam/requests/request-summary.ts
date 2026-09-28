@@ -1,9 +1,11 @@
 import type { EmployeeRequest, RequestType } from "./requests.api";
 
-/** What biso24_list_my_requests returns per Request (the raw one is ~5 KB). */
+/** What the request list tools return per Request (the raw one is ~5 KB). */
 export interface RequestSummary {
   id: string;
   type: { code?: string; name?: string };
+  /** Who filed it; only for requests awaiting my approval. */
+  requester?: { name?: string; staff_code?: string; department?: string };
   /** First and last date the Request applies to (YYYY-MM-DD). */
   from?: string;
   to?: string;
@@ -25,6 +27,7 @@ const PASSED_OR_PENDING = new Set(["SENT", "APPROVED", "NOT_STARTED"]);
 export function summarizeRequest(
   request: EmployeeRequest,
   typeNames: Map<string, string>,
+  { withRequester = false } = {},
 ): RequestSummary {
   const data = request.requestData ?? {};
   const step = request.approvalSteps?.find(
@@ -42,6 +45,15 @@ export function summarizeRequest(
       code: request.requestCategoryCode,
       name: typeNames.get(request.requestCategoryId ?? ""),
     },
+    ...(withRequester
+      ? {
+          requester: {
+            name: request.employeeDetail?.fullName,
+            staff_code: request.employeeDetail?.staffCode,
+            department: request.employeeDetail?.departmentName,
+          },
+        }
+      : {}),
     from: data.from ?? data.workingDate,
     to: data.to ?? data.workingDate,
     ...(days?.length ? { days } : {}),

@@ -14,6 +14,17 @@ params:query {
   limit: 20
   page: 1
   type: OWNER
+  ~status: PROCESSING
+  ~requestCategoryCode: LEAVE
+  ~requestCategoryId:
+  ~fromRegistrationDate: 2026-09-01
+  ~toRegistrationDate: 2026-09-30
+  ~from: 2026-01-01
+  ~to: 2026-12-31
+  ~q:
+  ~employeeId:
+  ~departmentId:
+  ~positionId:
 }
 
 assert {
@@ -21,8 +32,24 @@ assert {
 }
 
 docs {
-  Paginated list of the logged-in employee's requests (identified by the token).
-  - `type=OWNER`: requests created by the employee (other values not verified)
-  - `page`: starts at 1
+  Paginated list of Requests seen by the logged-in employee (identified by the token).
+  Backs the web app's "Quản lý đơn" screen (`/workspace/request-management?tab=<type>`).
   Response `data`: `{ data: [...], total, limit, page, totalPages, totalPendingApproval }`.
+  `totalPendingApproval` counts requests awaiting MY approval (same number for any `type`), not my own open requests.
+
+  The web app sends only the params below (whitelist in its `requestService` chunk); filters combine with AND.
+
+  | Param | Meaning | Values | Verified |
+  |---|---|---|---|
+  | `type` | Which list | `OWNER` = tab "Đơn của tôi" (created by me); `RESPONSIBLE` = tab "Đơn cần duyệt" (see List requests to approve). Omitted = same as `OWNER` | yes |
+  | `page` | Page number | starts at 1 | yes |
+  | `limit` | Page size | web app uses 20 | yes |
+  | `status` | Request status (filter "Trạng thái") | `NEW` = Lưu nháp, `PROCESSING` = Đang thực hiện, `APPROVED` = Đã duyệt, `REJECTED` = Từ chối; unknown values return 0 rows | yes |
+  | `requestCategoryCode` | Request type by code (filter "Loại phiếu"; what the web app sends) | `WORKING_REMOTELY`, `OVERTIME`, `UPDATE_ATTENDANCE`, `PROJECT_ALLOWANCE`, `LATE_ARRIVAL_EARLY_DEPARTURE`, `LEAVE`, `BUSINESS_TRIP`, `REQUEST_SWAP_SHIFT` (see List request types) | yes |
+  | `requestCategoryId` | Request type by `_id` from List request types | ObjectId | yes |
+  | `fromRegistrationDate` / `toRegistrationDate` | Range on `registrationDate` (date the request was filed) | `YYYY-MM-DD` | yes |
+  | `from` / `to` | Range on `requestData.from`/`to`, so it only matches types that have them (e.g. `LEAVE`); both needed | `YYYY-MM-DD` or ISO datetime | yes |
+  | `q` | Search box "Tìm kiếm..." | free text; matched nothing on employee name, staff code or notes, so the searched field is unknown | partly |
+  | `employeeId`, `departmentId`, `positionId` | Filter by employee / department / position (for approvers, not exposed in the UI) | ObjectId | not verified |
+  | `approval` | In the web app whitelist | `approval=true` returns HTTP 500 | no |
 }

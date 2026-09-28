@@ -19,6 +19,7 @@ describe("MCP server", () => {
       "biso24_list_my_requests",
       "biso24_list_my_work_shifts",
       "biso24_list_request_types",
+      "biso24_list_requests_to_approve",
     ]);
     for (const tool of tools) {
       expect(tool.title).toBeTruthy();

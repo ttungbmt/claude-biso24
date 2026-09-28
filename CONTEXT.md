@@ -65,6 +65,11 @@ _Avoid_: Update attendance, missed punch request
 A form an Employee submits for approval (leave, overtime, Attendance correction...), moving through approval steps.
 _Avoid_: Application, ticket, form
 
+**Approver**:
+The Employee whose approval a Request awaits at its current step.
+A "Request awaiting my approval" is one where the logged-in Employee is the Approver; Biso24 lists only those still open, not the ones already approved or rejected.
+_Avoid_: Responsible (the API's `type=RESPONSIBLE`), pending request (ambiguous: mine awaiting others, or others' awaiting me)
+
 ### Plugin
 
 **Plugin**:
