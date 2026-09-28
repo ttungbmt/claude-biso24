@@ -1,0 +1,28 @@
+meta {
+  name: List my requests
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{iamUrl}}/v1/request-employees?limit=20&page=1&type=OWNER
+  body: none
+  auth: inherit
+}
+
+params:query {
+  limit: 20
+  page: 1
+  type: OWNER
+}
+
+assert {
+  res.status: eq 200
+}
+
+docs {
+  Danh sách đơn từ của nhân viên đang đăng nhập (xác định qua token), có phân trang.
+  - `type=OWNER`: đơn do mình tạo (các giá trị khác chưa xác minh)
+  - `page`: bắt đầu từ 1
+  Response `data`: `{ data: [...], total, limit, page, totalPages, totalPendingApproval }`.
+}

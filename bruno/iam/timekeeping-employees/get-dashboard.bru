@@ -1,0 +1,24 @@
+meta {
+  name: Get timekeeping dashboard
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{iamUrl}}/v1/timekeeping-employees/dashboard?year=2026
+  body: none
+  auth: inherit
+}
+
+params:query {
+  year: 2026
+}
+
+assert {
+  res.status: eq 200
+}
+
+docs {
+  Tổng hợp chấm công theo năm của nhân viên đang đăng nhập (xác định qua token).
+  - `year`: 4 chữ số
+}

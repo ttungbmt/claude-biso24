@@ -1,0 +1,17 @@
+headers {
+  accept: application/json
+  domain: {{domain}}
+}
+
+auth {
+  mode: bearer
+}
+
+auth:bearer {
+  token: {{process.env.BISO24_TOKEN}}
+}
+
+docs {
+  Collection gọi thử Biso24 API trước khi bọc thành MCP tool.
+  Token lấy từ `bruno/.env` (BISO24_TOKEN) — không commit.
+}

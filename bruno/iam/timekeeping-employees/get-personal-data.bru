@@ -1,0 +1,26 @@
+meta {
+  name: Get personal timekeeping data
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{iamUrl}}/v1/timekeeping-employees/personal-data?month=09&year=2026
+  body: none
+  auth: inherit
+}
+
+params:query {
+  month: 09
+  year: 2026
+}
+
+assert {
+  res.status: eq 200
+}
+
+docs {
+  Dữ liệu chấm công của chính nhân viên đang đăng nhập (xác định qua token) trong một tháng.
+  - `month`: 2 chữ số (01–12)
+  - `year`: 4 chữ số
+}
