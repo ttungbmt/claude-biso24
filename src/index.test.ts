@@ -7,6 +7,7 @@ import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js"
 import { build } from "tsdown";
 import { describe, expect, it } from "vitest";
 import { connectTestClient, envelopeFetch } from "#test/helpers/mcp-harness";
+import { SERVER_VERSION } from "./constants";
 
 // The plugin runs the committed single-file bundle (docs/adr/0003).
 const root = fileURLToPath(new URL("..", import.meta.url));
@@ -57,11 +58,12 @@ describe("committed bundle", () => {
     }
   }, 60_000);
 
-  it("keeps the plugin version in step with package.json", async () => {
+  it("keeps the plugin and server versions in step with package.json", async () => {
     const [plugin, pkg] = await Promise.all([
       readJson(".claude-plugin/plugin.json"),
       readJson("package.json"),
     ]);
     expect(plugin.version).toBe(pkg.version);
+    expect(SERVER_VERSION).toBe(pkg.version);
   });
 });

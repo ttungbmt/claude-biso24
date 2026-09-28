@@ -1,6 +1,8 @@
-# Biso24 MCP Server
+# claude-biso24
 
-MCP server (TypeScript, stdio) wrapping the Biso24 API. Packages are managed with **pnpm** — never npm/yarn.
+The `biso24` Claude Code plugin (repo root = plugin root = the `ttungbmt` marketplace): Skills plus a
+read-only MCP server (TypeScript, stdio) wrapping the Biso24 API, shipped as a committed single-file
+bundle. Vocabulary: `CONTEXT.md`; decisions: `docs/adr/`. Packages are managed with **pnpm** — never npm/yarn.
 
 ## Language
 - Write everything that lands in the repo in English: code, identifiers, comments, docstrings,
@@ -21,7 +23,7 @@ MCP server (TypeScript, stdio) wrapping the Biso24 API. Packages are managed wit
 ## Structure
 ```
 .claude-plugin/   plugin.json (the `biso24` plugin: user config + inline MCP server running dist/index.js),
-                  marketplace.json (the `ttungbmt` marketplace; keep plugin `version` equal to package.json)
+                  marketplace.json (the `ttungbmt` marketplace; keep plugin `version` equal to package.json and `SERVER_VERSION`; bump all three per release)
 skills/<name>/    SKILL.md per Skill (today, timesheet), shipped with the plugin as /biso24:<name>;
                   English, self-contained (CONTEXT.md is not shipped), tell Claude to reply in the user's language
 dist/index.js     committed bundle (tsdown; all dependencies inlined, needs only Node)
