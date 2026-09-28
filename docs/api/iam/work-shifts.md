@@ -19,8 +19,9 @@ An array of shift assignments, or `null` when the employee has no shift that day
 
 | Field | Type | Notes |
 |---|---|---|
+| `workShiftId` | string | ObjectId, same as `workShiftItem._id`; what the Request endpoints take as a Work shift |
 | `workShiftCode` | string | |
-| `workShiftName` | string | |
+| `workShiftName` | string | label with times, e.g. `CA_HC (08:00 - 17:30)` |
 | `workShiftItem.code` | string | e.g. `CA_HC` |
 | `workShiftItem.name` | string | |
 | `workShiftItem.workingTimes.workingTime` | string (ISO datetime) | start time; only the time of day is meaningful |

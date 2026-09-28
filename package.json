@@ -26,7 +26,7 @@
     "format": "biome check --write .",
     "inspect": "pnpm build && mise exec -- npx @modelcontextprotocol/inspector node dist/index.js",
     "clean": "rm -rf dist",
-    "api": "cd bruno && bru run"
+    "api": "cd bruno && bru run --exclude-tags=write"
   },
   "engines": {
     "node": ">=20"

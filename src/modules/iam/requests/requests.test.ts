@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import {
   apiCalls,
   connectTestClient,
@@ -7,6 +7,9 @@ import {
   resultText,
   routeFetch,
 } from "#test/helpers/mcp-harness";
+
+// Work shift times are instants; the tools print them in local time.
+process.env.TZ = "Asia/Ho_Chi_Minh";
 
 const conditions = [
   {
@@ -304,6 +307,458 @@ describe("request tools", () => {
       has_more: false,
       total_awaiting_my_approval: 1,
     });
+  });
+
+  const draftPage = (data: unknown[], page = 1, totalPages = 1) => ({
+    data,
+    total: data.length,
+    limit: 100,
+    page,
+    totalPages,
+    totalPendingApproval: 0,
+  });
+
+  it("biso24_delete_my_request deletes one of my drafts and returns its summary", async () => {
+    const fetchMock = routeFetch({
+      "GET /v1/request-employees": draftPage([attendanceDraft]),
+      "DELETE /v1/request-employees": null,
+      "/v1/request-managements": requestTypes,
+    });
+    const client = await connectTestClient(fetchMock);
+
+    const result = await client.callTool({
+      name: "biso24_delete_my_request",
+      arguments: { request_id: "r1" },
+    });
+
+    const lookup = fetchCall(fetchMock);
+    expect(Object.fromEntries(lookup.url.searchParams)).toEqual({
+      type: "OWNER",
+      status: "NEW",
+      page: "1",
+      limit: "100",
+    });
+    const deletion = apiCalls(fetchMock)
+      .map((_, n) => fetchCall(fetchMock, n))
+      .filter((call) => call.method === "DELETE");
+    expect(deletion).toHaveLength(1);
+    expect(deletion[0]?.url.pathname).toBe("/v1/request-employees");
+    expect(deletion[0]?.body).toBe(JSON.stringify(["r1"]));
+    expect(result.structuredContent).toMatchObject({
+      deleted: {
+        id: "r1",
+        type: { code: "UPDATE_ATTENDANCE", name: "Attendance correction" },
+        from: "2026-09-23",
+        status: "NEW",
+      },
+    });
+  });
+
+  it("biso24_delete_my_request looks through every page of my drafts", async () => {
+    const pages = [
+      draftPage([{ ...attendanceDraft, _id: "other" }], 1, 2),
+      draftPage([attendanceDraft], 2, 2),
+    ];
+    const otherRoutes = routeFetch({
+      "DELETE /v1/request-employees": null,
+      "/v1/request-managements": requestTypes,
+    });
+    const fetchMock = vi.fn<typeof fetch>(async (url, init) => {
+      const { pathname, searchParams } = new URL(String(url));
+      if (pathname !== "/v1/request-employees" || init?.method !== "GET") {
+        return otherRoutes(url, init);
+      }
+      const data = pages[Number(searchParams.get("page")) - 1];
+      return new Response(JSON.stringify({ success: true, data }));
+    });
+    const client = await connectTestClient(fetchMock);
+
+    const result = await client.callTool({
+      name: "biso24_delete_my_request",
+      arguments: { request_id: "r1" },
+    });
+
+    expect(result.isError).toBeFalsy();
+    const calls = apiCalls(fetchMock).map((_, n) => fetchCall(fetchMock, n));
+    expect(
+      calls
+        .filter((c) => c.url.pathname === "/v1/request-employees")
+        .map((c) => `${c.method} ${c.url.searchParams.get("page") ?? ""}`),
+    ).toEqual(["GET 1", "GET 2", "DELETE "]);
+  });
+
+  it("biso24_delete_my_request refuses a request that is not one of my drafts", async () => {
+    const fetchMock = routeFetch({
+      "GET /v1/request-employees": draftPage([attendanceDraft]),
+      "/v1/request-managements": requestTypes,
+    });
+    const client = await connectTestClient(fetchMock);
+
+    const result = await client.callTool({
+      name: "biso24_delete_my_request",
+      arguments: { request_id: "someone-elses-or-submitted" },
+    });
+
+    expect(result.isError).toBe(true);
+    expect(resultText(result)).toMatch(/not one of .* draft \(NEW\) requests/);
+    expect(
+      apiCalls(fetchMock).filter(([, init]) => init?.method === "DELETE"),
+    ).toHaveLength(0);
+  });
+
+  it("biso24_delete_my_request is annotated as destructive", async () => {
+    const client = await connectTestClient(envelopeFetch(null));
+
+    const { tools } = await client.listTools();
+    const tool = tools.find((t) => t.name === "biso24_delete_my_request");
+
+    expect(tool?.annotations).toMatchObject({
+      readOnlyHint: false,
+      destructiveHint: true,
+    });
+  });
+
+  const submitPath = "PUT /v1/request-employees/r1/send-request";
+  const submitted = {
+    ...attendanceDraft,
+    status: "PROCESSING",
+    approvalSteps: [
+      { stepIndex: 1, stepTitle: "Create", status: "SENT", conditions },
+      {
+        stepIndex: 2,
+        stepTitle: "Direct manager",
+        status: "WAITING_FOR_APPROVAL",
+        conditions: [],
+      },
+    ],
+  };
+
+  it("biso24_submit_my_request submits one of my drafts for approval", async () => {
+    const fetchMock = routeFetch({
+      "GET /v1/request-employees": draftPage([attendanceDraft]),
+      [submitPath]: submitted,
+      "/v1/request-managements": requestTypes,
+    });
+    const client = await connectTestClient(fetchMock);
+
+    const result = await client.callTool({
+      name: "biso24_submit_my_request",
+      arguments: { request_id: "r1" },
+    });
+
+    const lookup = fetchCall(fetchMock);
+    expect(Object.fromEntries(lookup.url.searchParams)).toMatchObject({
+      type: "OWNER",
+      status: "NEW",
+    });
+    const sends = apiCalls(fetchMock)
+      .map((_, n) => fetchCall(fetchMock, n))
+      .filter((call) => call.method === "PUT");
+    expect(sends).toHaveLength(1);
+    expect(sends[0]?.url.pathname).toBe(
+      "/v1/request-employees/r1/send-request",
+    );
+    expect(sends[0]?.body).toBeUndefined();
+    expect(result.structuredContent).toMatchObject({
+      submitted: {
+        id: "r1",
+        type: { code: "UPDATE_ATTENDANCE", name: "Attendance correction" },
+        from: "2026-09-23",
+        status: "PROCESSING",
+        next_approver: { name: "Manager One", staff_code: "006" },
+      },
+    });
+  });
+
+  it("biso24_submit_my_request falls back to the draft when the API returns no request", async () => {
+    const fetchMock = routeFetch({
+      "GET /v1/request-employees": draftPage([attendanceDraft]),
+      [submitPath]: null,
+      "/v1/request-managements": requestTypes,
+    });
+    const client = await connectTestClient(fetchMock);
+
+    const result = await client.callTool({
+      name: "biso24_submit_my_request",
+      arguments: { request_id: "r1" },
+    });
+
+    expect(result.isError).toBeFalsy();
+    expect(result.structuredContent).toMatchObject({
+      submitted: { id: "r1", from: "2026-09-23" },
+    });
+  });
+
+  it("biso24_submit_my_request refuses a request that is not one of my drafts", async () => {
+    const fetchMock = routeFetch({
+      "GET /v1/request-employees": draftPage([attendanceDraft]),
+      "/v1/request-managements": requestTypes,
+    });
+    const client = await connectTestClient(fetchMock);
+
+    const result = await client.callTool({
+      name: "biso24_submit_my_request",
+      arguments: { request_id: "someone-elses-or-submitted" },
+    });
+
+    expect(result.isError).toBe(true);
+    expect(resultText(result)).toMatch(/not one of .* draft \(NEW\) requests/);
+    expect(
+      apiCalls(fetchMock).filter(([, init]) => init?.method === "PUT"),
+    ).toHaveLength(0);
+  });
+
+  it("biso24_submit_my_request is annotated as a non-destructive write", async () => {
+    const client = await connectTestClient(envelopeFetch(null));
+
+    const { tools } = await client.listTools();
+    const tool = tools.find((t) => t.name === "biso24_submit_my_request");
+
+    expect(tool?.annotations).toMatchObject({
+      readOnlyHint: false,
+      destructiveHint: false,
+    });
+  });
+
+  const officeShift = {
+    workShiftId: "shift-hc",
+    workShiftCode: "CA_HC",
+    workShiftName: "CA_HC (08:00 - 17:30)",
+    workShiftItem: {
+      _id: "shift-hc",
+      code: "CA_HC",
+      name: "Office hours",
+      workingTimes: { workingTime: "2026-05-15T01:00:00.000Z" },
+      endTimes: { endTime: "2026-05-15T10:30:00.000Z" },
+    },
+  };
+  const candidates = [
+    {
+      employeeId: "e5",
+      staffCode: "005",
+      fullName: "Other Lead",
+      departmentName: "Mobile",
+      positionName: "Lead",
+    },
+    {
+      employeeId: "e6",
+      staffCode: "006",
+      fullName: "Manager One",
+      avatar: "",
+      personalEmail: "",
+      companyEmail: "",
+      departmentName: "Software",
+      positionName: "Deputy head",
+    },
+  ];
+  const approversPath =
+    "POST /v1/request-employees/cat-attendance/approve-details-for-next-steps";
+  const shiftPath = "/v1/work-shift-employees/work-shift-current-date";
+
+  it("biso24_list_attendance_correction_approvers lists approvers for the date's shift", async () => {
+    const fetchMock = routeFetch({
+      [shiftPath]: [officeShift],
+      "/v1/request-managements": requestTypes,
+      [approversPath]: candidates,
+    });
+    const client = await connectTestClient(fetchMock);
+
+    const result = await client.callTool({
+      name: "biso24_list_attendance_correction_approvers",
+      arguments: { working_date: "2026-09-24" },
+    });
+
+    const calls = apiCalls(fetchMock).map((_, n) => fetchCall(fetchMock, n));
+    const shiftCall = calls.find((c) => c.url.pathname === shiftPath);
+    expect(shiftCall?.url.searchParams.get("currentDate")).toBe("2026-09-24");
+    const approversCall = calls.find((c) => c.method === "POST");
+    expect(approversCall?.body).toBe(JSON.stringify({ workShift: "shift-hc" }));
+    expect(result.structuredContent).toEqual({
+      work_shift: {
+        code: "CA_HC",
+        name: "Office hours",
+        start: "08:00",
+        end: "17:30",
+      },
+      approvers: [
+        {
+          staff_code: "005",
+          name: "Other Lead",
+          department: "Mobile",
+          position: "Lead",
+        },
+        {
+          staff_code: "006",
+          name: "Manager One",
+          department: "Software",
+          position: "Deputy head",
+        },
+      ],
+    });
+  });
+
+  it("biso24_create_my_attendance_correction saves a draft with the shift's times", async () => {
+    const fetchMock = routeFetch({
+      [shiftPath]: [officeShift],
+      "/v1/request-managements": requestTypes,
+      [approversPath]: candidates,
+      "POST /v1/request-employees": {
+        ...attendanceDraft,
+        requestData: {
+          ...attendanceDraft.requestData,
+          workingDate: "2026-09-24",
+        },
+      },
+    });
+    const client = await connectTestClient(fetchMock);
+
+    const result = await client.callTool({
+      name: "biso24_create_my_attendance_correction",
+      arguments: {
+        working_date: "2026-09-24",
+        reason: "Quên chấm công",
+        approver_staff_code: "006",
+      },
+    });
+
+    const create = apiCalls(fetchMock)
+      .map((_, n) => fetchCall(fetchMock, n))
+      .find(
+        (c) =>
+          c.method === "POST" && c.url.pathname === "/v1/request-employees",
+      );
+    const body = JSON.parse(String(create?.body));
+    expect(body).toEqual({
+      registrationDate: expect.any(String),
+      requestCategoryId: "cat-attendance",
+      requestCategoryCode: "UPDATE_ATTENDANCE",
+      requestData: {
+        workingDate: "2026-09-24",
+        workShiftItem: {
+          code: "CA_HC",
+          workShiftItemId: "shift-hc",
+          name: "CA_HC (08:00 - 17:30)",
+        },
+        timeIn: "08:00:00",
+        timeOut: "17:30:00",
+      },
+      notes: "Quên chấm công",
+      files: [],
+      approvalForNextStep: candidates[1],
+    });
+    expect(result.structuredContent).toMatchObject({
+      created: { id: "r1", status: "NEW", from: "2026-09-24" },
+      time_in: "08:00",
+      time_out: "17:30",
+      approver: { name: "Manager One", staff_code: "006" },
+    });
+  });
+
+  it("biso24_create_my_attendance_correction uses the given times", async () => {
+    const fetchMock = routeFetch({
+      [shiftPath]: [officeShift],
+      "/v1/request-managements": requestTypes,
+      [approversPath]: candidates,
+      "POST /v1/request-employees": attendanceDraft,
+    });
+    const client = await connectTestClient(fetchMock);
+
+    await client.callTool({
+      name: "biso24_create_my_attendance_correction",
+      arguments: {
+        working_date: "2026-09-24",
+        reason: "Mất điện",
+        approver_staff_code: "006",
+        time_in: "08:15",
+        time_out: "12:00",
+      },
+    });
+
+    const create = apiCalls(fetchMock)
+      .map((_, n) => fetchCall(fetchMock, n))
+      .find(
+        (c) =>
+          c.method === "POST" && c.url.pathname === "/v1/request-employees",
+      );
+    expect(JSON.parse(String(create?.body)).requestData).toMatchObject({
+      timeIn: "08:15:00",
+      timeOut: "12:00:00",
+    });
+  });
+
+  it("biso24_create_my_attendance_correction refuses an approver outside the list", async () => {
+    const fetchMock = routeFetch({
+      [shiftPath]: [officeShift],
+      "/v1/request-managements": requestTypes,
+      [approversPath]: candidates,
+    });
+    const client = await connectTestClient(fetchMock);
+
+    const result = await client.callTool({
+      name: "biso24_create_my_attendance_correction",
+      arguments: {
+        working_date: "2026-09-24",
+        reason: "Quên chấm công",
+        approver_staff_code: "999",
+      },
+    });
+
+    expect(result.isError).toBe(true);
+    expect(resultText(result)).toMatch(
+      /999 is not among the allowed approvers/,
+    );
+    const posts = apiCalls(fetchMock)
+      .map((_, n) => fetchCall(fetchMock, n))
+      .filter((c) => c.url.pathname === "/v1/request-employees");
+    expect(posts).toHaveLength(0);
+  });
+
+  it("biso24_create_my_attendance_correction refuses a date without a shift", async () => {
+    const fetchMock = routeFetch({
+      [shiftPath]: null,
+      "/v1/request-managements": requestTypes,
+    });
+    const client = await connectTestClient(fetchMock);
+
+    const result = await client.callTool({
+      name: "biso24_create_my_attendance_correction",
+      arguments: {
+        working_date: "2026-09-27",
+        reason: "Quên chấm công",
+        approver_staff_code: "006",
+      },
+    });
+
+    expect(result.isError).toBe(true);
+    expect(resultText(result)).toMatch(/No Work shift on 2026-09-27/);
+  });
+
+  it("biso24_create_my_attendance_correction asks for a shift code when a date has several", async () => {
+    const fetchMock = routeFetch({
+      [shiftPath]: [
+        officeShift,
+        {
+          ...officeShift,
+          workShiftId: "shift-n",
+          workShiftCode: "CA_N",
+          workShiftItem: { ...officeShift.workShiftItem, code: "CA_N" },
+        },
+      ],
+      "/v1/request-managements": requestTypes,
+    });
+    const client = await connectTestClient(fetchMock);
+
+    const result = await client.callTool({
+      name: "biso24_create_my_attendance_correction",
+      arguments: {
+        working_date: "2026-09-24",
+        reason: "Quên chấm công",
+        approver_staff_code: "006",
+      },
+    });
+
+    expect(result.isError).toBe(true);
+    expect(resultText(result)).toMatch(/several Work shifts \(CA_HC, CA_N\)/);
   });
 
   it("biso24_list_request_types paginates client-side", async () => {

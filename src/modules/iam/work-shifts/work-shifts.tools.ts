@@ -2,6 +2,7 @@ import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import type { Biso24Client } from "#core/http/biso24-client";
 import { defineTool, READ_ONLY } from "#core/mcp/define-tool";
+import { localTime } from "./local-time";
 import {
   getWorkShiftOnDate,
   type WorkShiftAssignment,
@@ -83,13 +84,6 @@ function summarizeShift(date: string, shift: WorkShiftAssignment) {
     start: localTime(item?.workingTimes?.workingTime),
     end: localTime(item?.endTimes?.endTime),
   };
-}
-
-/** An ISO instant's time of day as HH:mm in the server's local time zone. */
-function localTime(instant: string | undefined): string | undefined {
-  if (!instant) return undefined;
-  const time = new Date(instant);
-  return `${pad(time.getHours())}:${pad(time.getMinutes())}`;
 }
 
 /** Every date of the month as YYYY-MM-DD. */

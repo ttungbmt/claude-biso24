@@ -1,7 +1,7 @@
 {
   "name": "biso24",
   "version": "0.2.0",
-  "description": "Ask Claude about your own Biso24 timekeeping, work shifts and requests (read-only).",
+  "description": "Ask Claude about your own Biso24 timekeeping, work shifts and requests; can delete your own draft requests.",
   "author": { "name": "ttungbmt" },
   "repository": "https://github.com/ttungbmt/claude-biso24",
   "license": "MIT",

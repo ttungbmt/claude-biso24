@@ -1,0 +1,21 @@
+meta {
+  name: Submit my request
+  type: http
+  seq: 8
+  tags: [
+    write
+  ]
+}
+
+put {
+  url: {{iamUrl}}/v1/request-employees/{{process.env.BISO24_REQUEST_ID}}/send-request
+  body: none
+  auth: inherit
+}
+
+docs {
+  Submits a draft Request for approval for real ("Gửi duyệt"). Tagged `write`, so `pnpm api`
+  skips it; run it on its own with
+  `BISO24_REQUEST_ID=<id> bru run iam/requests/submit-my-request.bru` from `bruno/`.
+  API reference: `docs/api/iam/requests.md`.
+}

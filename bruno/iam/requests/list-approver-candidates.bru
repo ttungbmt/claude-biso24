@@ -1,0 +1,23 @@
+meta {
+  name: List approver candidates
+  type: http
+  seq: 6
+}
+
+post {
+  url: {{iamUrl}}/v1/request-employees/{{process.env.BISO24_REQUEST_TYPE_ID}}/approve-details-for-next-steps
+  body: json
+  auth: inherit
+}
+
+body:json {
+  {
+    "workShift": "{{process.env.BISO24_WORK_SHIFT_ID}}"
+  }
+}
+
+docs {
+  Read-only despite the POST. Needs `BISO24_REQUEST_TYPE_ID` (a request type `_id`, e.g. the
+  UPDATE_ATTENDANCE one from list-request-types) and `BISO24_WORK_SHIFT_ID` (a `workShiftId`
+  from iam/work-shifts). API reference: `docs/api/iam/requests.md`.
+}

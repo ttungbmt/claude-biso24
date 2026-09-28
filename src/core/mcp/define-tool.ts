@@ -17,6 +17,22 @@ export const READ_ONLY: ToolAnnotations = {
   openWorldHint: true,
 };
 
+/** Annotations for Write tools that delete or overwrite data in Biso24 (ADR 0005). */
+export const DESTRUCTIVE: ToolAnnotations = {
+  readOnlyHint: false,
+  destructiveHint: true,
+  idempotentHint: false,
+  openWorldHint: true,
+};
+
+/** Annotations for Write tools that only add data to Biso24, e.g. a draft (ADR 0005). */
+export const WRITE: ToolAnnotations = {
+  readOnlyHint: false,
+  destructiveHint: false,
+  idempotentHint: false,
+  openWorldHint: true,
+};
+
 export interface ToolDefinition<Shape extends ZodRawShapeCompat> {
   name: `biso24_${string}`;
   title: string;

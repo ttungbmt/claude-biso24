@@ -1,7 +1,7 @@
 # claude-biso24
 
 The `biso24` Claude Code plugin (repo root = plugin root = the `ttungbmt` marketplace): Skills plus a
-read-only MCP server (TypeScript, stdio) wrapping the Biso24 API, shipped as a committed single-file
+MCP server (TypeScript, stdio) wrapping the Biso24 API, shipped as a committed single-file
 bundle. Vocabulary: `CONTEXT.md`; decisions: `docs/adr/`; Biso24 API reference: `docs/api/`. Packages are managed with **pnpm** — never npm/yarn.
 
 ## Language
@@ -17,14 +17,14 @@ bundle. Vocabulary: `CONTEXT.md`; decisions: `docs/adr/`; Biso24 API reference: 
 - `pnpm mcp:dev` — register the `biso24-dev` MCP server (from source, via mise) in Claude Code's local scope, once per clone. There is no root `.mcp.json`: an installed plugin would load it too (ADR 0002).
 - `claude plugin validate .` (marketplace) and `claude plugin validate .claude-plugin/plugin.json` after editing the manifests; `claude --plugin-dir .` to try the plugin
 - `pnpm inspect` — build, then open the MCP Inspector
-- `pnpm api` — run the Bruno collection (`bruno/`; vars from `bruno/.env`, a git-ignored symlink to the root `.env`, since Bruno reads only `<collection>/.env` and the VS Code extension doesn't get mise env; no Bruno environment) against the real API; try endpoints there before wrapping them as tools, and record what you learn (params, values, response fields, verified or not, odd behaviour) in `docs/api/`, not in the `.bru` files (ADR 0004)
+- `pnpm api` — run the Bruno collection (`bruno/`; vars from `bruno/.env`, a git-ignored symlink to the root `.env`, since Bruno reads only `<collection>/.env` and the VS Code extension doesn't get mise env; no Bruno environment) against the real API; try endpoints there before wrapping them as tools, and record what you learn (params, values, response fields, verified or not, odd behaviour) in `docs/api/`, not in the `.bru` files (ADR 0004). Requests that change data are tagged `write` and excluded from `pnpm api`; run them one file at a time
 - Requires env `BISO24_EMAIL`, `BISO24_PASSWORD`, `BISO24_ORG_ID`, `BISO24_DOMAIN` (optional `BISO24_IAM_URL`) in the git-ignored `.env`, loaded by mise (`mise.toml` `[env]`; `biso24-dev` runs the server via `mise exec`). The installed plugin gets them from its user config instead (`.claude-plugin/plugin.json`); see `.env.example`. Never put real credentials in tracked files.
 
 ## Structure
 ```
 .claude-plugin/   plugin.json (the `biso24` plugin: user config + inline MCP server running dist/index.js),
                   marketplace.json (the `ttungbmt` marketplace; keep plugin `version` equal to package.json and `SERVER_VERSION`; bump all three per release)
-skills/<name>/    SKILL.md per Skill (today, timesheet), shipped with the plugin as /biso24:<name>;
+skills/<name>/    SKILL.md per Skill (today, timesheet, attendance-correction), shipped with the plugin as /biso24:<name>;
                   English, self-contained (CONTEXT.md is not shipped), tell Claude to reply in the user's language
 dist/index.js     committed bundle (tsdown; all dependencies inlined, needs only Node)
 docs/api/         Biso24 API reference, one <service>/<resource>.md per resource (template in README.md);
@@ -37,7 +37,7 @@ src/
                   re-logs in once on 401), SessionAuth (logs in via POST /v1/auth/login, caches
                   the JWT until near `exp`; there is no refresh flow), Biso24ApiError/Biso24AuthError,
                   createApiClients (one client per service, one shared SessionAuth)
-  core/mcp/       defineTool, READ_ONLY annotations, pagination, ok()/toolError()/truncate()
+  core/mcp/       defineTool, READ_ONLY/DESTRUCTIVE annotations, pagination, ok()/toolError()/truncate()
   modules/<service>/<resource>/
                   <resource>.api.ts    typed HTTP calls only (no MCP imports)
                   <resource>.tools.ts  register<Resource>Tools: MCP registration only
@@ -56,7 +56,8 @@ test/helpers/     mcp-harness.ts: connectTestClient(fetchMock), envelopeFetch() 
 ## Tool conventions
 - Name tools `biso24_<verb>_<object>` (snake_case); `_my_` for data of the logged-in employee (identified by the token).
 - Register with `defineTool` (wraps `server.registerTool`): the handler returns data; it is JSON-serialized, truncated at `CHARACTER_LIMIT` and sent as `structuredContent`, and thrown errors become `toolError(e)`.
-- Always set `title`, `description` (say when to use / not use it), a zod `inputSchema` with `.describe()` on each field, and `annotations` (`READ_ONLY` for GET tools).
+- Always set `title`, `description` (say when to use / not use it), a zod `inputSchema` with `.describe()` on each field, and `annotations` (`READ_ONLY` for GET tools, `DESTRUCTIVE` for deletes).
+- Write tools act only on the logged-in employee's own data, check that before calling the API, and act on one record per call (ADR 0005).
 - List tools spread `paginationShape` (`limit`/`offset`) and return `has_more`/`next_offset`: use `toPageParams` + `pageMeta` for page-based endpoints, `paginate` for unpaginated ones.
 - Every new tool needs a test that calls it through `connectTestClient` with a mocked `fetch`.
 

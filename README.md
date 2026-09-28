@@ -1,8 +1,9 @@
 # claude-biso24
 
 A Claude Code plugin that lets you ask Claude about your own [Biso24](https://biso24.org) HR data:
-your timekeeping, work shifts and requests. Everything is read-only: it never checks in, creates
-or approves anything.
+your timekeeping, work shifts and requests. It only reads, with one exception: it can delete a
+draft request of your own when you ask it to (Claude Code asks your permission first). It never
+checks in, submits, approves or touches anyone else's requests.
 
 ## Install
 
@@ -38,6 +39,7 @@ Just ask, in any language. Claude answers in the language you asked in.
 | Skill | Ask for example | You get |
 |---|---|---|
 | `/biso24:today` | "What's my shift today? Did I check in?" | Today's work shift, check-in/out times, and a note if you were late |
+| `/biso24:attendance-correction` | "Draft an attendance correction for the 24th" | Saves a draft correction per date (Work shift times by default, your usual approver), after checking for an existing one; you submit it in Biso24 |
 | `/biso24:timesheet` | "How did my September go?" | Late warnings, other late arrivals, early leaves, time at work, and every day without a timekeeping record with the request that covers it (or a flag to check it) |
 
 A day without a timekeeping record is never called an absence: it may be leave, a forgotten
@@ -55,6 +57,10 @@ The skills use these tools, which you can also ask about directly:
 | `biso24_list_my_requests` | My requests (leave, attendance correction, overtime...) as compact summaries, filterable by status and type, paginated |
 | `biso24_list_requests_to_approve` | Other employees' requests awaiting my approval, with the requester, paginated |
 | `biso24_list_request_types` | Request types configured for the organization |
+| `biso24_list_attendance_correction_approvers` | Who I may pick as approver of an attendance correction for a date, and that date's work shift |
+| `biso24_create_my_attendance_correction` | Save an attendance correction for a date as a draft (not submitted) |
+| `biso24_submit_my_request` | Submit one of my draft requests for approval ("Gửi duyệt") |
+| `biso24_delete_my_request` | Delete one of my draft (not yet submitted) requests; cannot be undone |
 
 Biso24 has no long-lived API token. The MCP server logs in with your account on the first tool
 call, keeps the JWT (valid ~24h) in memory, and logs in again shortly before it expires or when

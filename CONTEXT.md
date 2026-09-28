@@ -65,6 +65,18 @@ _Avoid_: Update attendance, missed punch request
 A form an Employee submits for approval (leave, overtime, Attendance correction...), moving through approval steps.
 _Avoid_: Application, ticket, form
 
+**Draft**:
+A Request saved but not yet submitted (status `NEW`, the web app's "Lưu nháp"); only its filer sees it, and it can still be deleted. Submitting it ("Gửi duyệt") starts its approval steps.
+_Avoid_: New request (ambiguous with a freshly submitted one)
+
+**Request deletion**:
+Removing a Request from Biso24 entirely, so it no longer appears in any list.
+_Avoid_: Cancel, withdraw, remove
+
+**Request cancellation**:
+Withdrawing a submitted Request from its approval flow; the Request itself remains.
+_Avoid_: Delete
+
 **Approver**:
 The Employee whose approval a Request awaits at its current step.
 A "Request awaiting my approval" is one where the logged-in Employee is the Approver; Biso24 lists only those still open, not the ones already approved or rejected.
@@ -83,6 +95,10 @@ _Avoid_: Server (alone), backend
 **Skill**:
 A packaged workflow in the Plugin that combines tools to answer an Employee's recurring question.
 _Avoid_: Command, prompt
+
+**Write tool**:
+A tool that changes data in Biso24 rather than only reading it; it acts only on the Logged-in employee's own data.
+_Avoid_: Action, mutation
 
 **Service**:
 One Biso24 host (base URL), such as IAM, which also serves HR data.

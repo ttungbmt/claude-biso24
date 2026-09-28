@@ -19,7 +19,7 @@ timekeeping, work shifts, requests). Every path below starts with `/v1`.
 | [iam/employees](iam/employees.md) | `GET /v1/employees/{id}` |
 | [iam/timekeeping](iam/timekeeping.md) | `GET /v1/timekeeping-employees/personal-data`, `GET /v1/timekeeping-employees/dashboard` |
 | [iam/work-shifts](iam/work-shifts.md) | `GET /v1/work-shift-employees/work-shift-current-date` |
-| [iam/requests](iam/requests.md) | `GET /v1/request-managements`, `GET /v1/request-employees` |
+| [iam/requests](iam/requests.md) | `GET /v1/request-managements`, `GET`/`POST`/`DELETE /v1/request-employees`, `POST /v1/request-employees/{requestTypeId}/approve-details-for-next-steps` |
 
 ## Common conventions
 

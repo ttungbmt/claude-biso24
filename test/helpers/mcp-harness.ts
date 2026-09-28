@@ -27,18 +27,20 @@ export function envelopeFetch(body: unknown, status = 200): Mock<typeof fetch> {
 }
 
 /**
- * Mock fetch keyed by URL path (e.g. "/v1/request-employees"): each route's
- * body is wrapped in the Biso24 envelope; unknown paths answer 404.
+ * Mock fetch keyed by URL path (e.g. "/v1/request-employees"), or by method
+ * and path (e.g. "DELETE /v1/request-employees"), which wins: each route's
+ * body is wrapped in the Biso24 envelope; unknown routes answer 404.
  */
 export function routeFetch(
   routes: Record<string, unknown>,
 ): Mock<typeof fetch> {
-  return vi.fn<typeof fetch>(async (url) => {
+  return vi.fn<typeof fetch>(async (url, init) => {
     if (isLogin(url)) return loginResponse();
     const { pathname } = new URL(String(url));
-    return pathname in routes
-      ? envelopeResponse(routes[pathname])
-      : envelopeResponse(null, 404);
+    const key = [`${init?.method ?? "GET"} ${pathname}`, pathname].find(
+      (k) => k in routes,
+    );
+    return key ? envelopeResponse(routes[key]) : envelopeResponse(null, 404);
   });
 }
 
@@ -78,12 +80,14 @@ export function apiCalls(fetchMock: Mock<typeof fetch>) {
   return fetchMock.mock.calls.filter(([url]) => !isLogin(url));
 }
 
-/** URL and headers of the n-th API (non-login) fetch call. */
+/** URL, method, headers and body of the n-th API (non-login) fetch call. */
 export function fetchCall(fetchMock: Mock<typeof fetch>, n = 0) {
   const [url, init] = apiCalls(fetchMock)[n] ?? [];
   return {
     url: new URL(String(url)),
+    method: init?.method ?? "GET",
     headers: (init?.headers ?? {}) as Record<string, string>,
+    body: init?.body,
   };
 }
 

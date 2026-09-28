@@ -1,0 +1,44 @@
+meta {
+  name: Create attendance correction draft
+  type: http
+  seq: 7
+  tags: [
+    write
+  ]
+}
+
+post {
+  url: {{iamUrl}}/v1/request-employees
+  body: json
+  auth: inherit
+}
+
+body:json {
+  {
+    "registrationDate": "{{process.env.BISO24_REGISTRATION_DATE}}",
+    "requestCategoryId": "{{process.env.BISO24_REQUEST_TYPE_ID}}",
+    "requestCategoryCode": "UPDATE_ATTENDANCE",
+    "requestData": {
+      "workingDate": "{{process.env.BISO24_WORKING_DATE}}",
+      "workShiftItem": {
+        "code": "CA_HC",
+        "workShiftItemId": "{{process.env.BISO24_WORK_SHIFT_ID}}",
+        "name": "CA_HC (08:00 - 17:30)"
+      },
+      "timeIn": "08:00:00",
+      "timeOut": "17:30:00"
+    },
+    "notes": "Quên chấm công",
+    "files": [],
+    "approvalForNextStep": {
+      "employeeId": "{{process.env.BISO24_APPROVER_ID}}"
+    }
+  }
+}
+
+docs {
+  Creates a draft Request for real. Tagged `write`, so `pnpm api` skips it; run it on its own
+  from `bruno/`. The web app sends the whole approver object from list-approver-candidates in
+  `approvalForNextStep`; only `employeeId` is set here (not verified that it is enough).
+  API reference: `docs/api/iam/requests.md`.
+}

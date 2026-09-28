@@ -2,6 +2,8 @@ import type { Biso24Client } from "#core/http/biso24-client";
 
 /** One Work shift assignment as returned by the per-date endpoint (fields we read). */
 export interface WorkShiftAssignment {
+  /** The Work shift's id (`workShiftItem._id`). */
+  workShiftId?: string;
   workShiftCode?: string;
   workShiftName?: string;
   workShiftItem?: {

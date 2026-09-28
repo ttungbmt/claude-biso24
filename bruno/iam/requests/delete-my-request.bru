@@ -1,0 +1,24 @@
+meta {
+  name: Delete my request
+  type: http
+  seq: 5
+  tags: [
+    write
+  ]
+}
+
+delete {
+  url: {{iamUrl}}/v1/request-employees
+  body: json
+  auth: inherit
+}
+
+body:json {
+  ["{{process.env.BISO24_REQUEST_ID}}"]
+}
+
+docs {
+  Deletes a Request for real. Tagged `write`, so `pnpm api` skips it; run it on its own with
+  `BISO24_REQUEST_ID=<id> bru run iam/requests/delete-my-request.bru` from `bruno/`.
+  API reference: `docs/api/iam/requests.md`.
+}
