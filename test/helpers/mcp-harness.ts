@@ -22,19 +22,41 @@ const isLogin = (url: unknown) => String(url).endsWith("/v1/auth/login");
  */
 export function envelopeFetch(body: unknown, status = 200): Mock<typeof fetch> {
   return vi.fn<typeof fetch>(async (url) =>
-    isLogin(url)
-      ? new Response(
-          JSON.stringify({ success: true, data: { token: TEST_TOKEN } }),
-        )
-      : new Response(
-          JSON.stringify({
-            success: status < 400,
-            statusCode: status,
-            message: status < 400 ? "OK" : "Request failed",
-            data: body,
-          }),
-          { status },
-        ),
+    isLogin(url) ? loginResponse() : envelopeResponse(body, status),
+  );
+}
+
+/**
+ * Mock fetch keyed by URL path (e.g. "/v1/request-employees"): each route's
+ * body is wrapped in the Biso24 envelope; unknown paths answer 404.
+ */
+export function routeFetch(
+  routes: Record<string, unknown>,
+): Mock<typeof fetch> {
+  return vi.fn<typeof fetch>(async (url) => {
+    if (isLogin(url)) return loginResponse();
+    const { pathname } = new URL(String(url));
+    return pathname in routes
+      ? envelopeResponse(routes[pathname])
+      : envelopeResponse(null, 404);
+  });
+}
+
+function loginResponse() {
+  return new Response(
+    JSON.stringify({ success: true, data: { token: TEST_TOKEN } }),
+  );
+}
+
+function envelopeResponse(body: unknown, status = 200) {
+  return new Response(
+    JSON.stringify({
+      success: status < 400,
+      statusCode: status,
+      message: status < 400 ? "OK" : "Request failed",
+      data: body,
+    }),
+    { status },
   );
 }
 

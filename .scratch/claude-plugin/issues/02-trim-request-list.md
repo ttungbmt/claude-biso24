@@ -8,9 +8,9 @@ questions fit in context. See spec, "Trimmed `biso24_list_my_requests`".
 
 **Status:** ready-for-agent
 
-- [ ] Each item contains only: id, Request type code/name, the date(s) the Request applies to, overall status, current approval step, next approver's name and Staff code, note, created date
-- [ ] Approval step conditions and org/department id lists are absent from the output
-- [ ] `has_more`, `next_offset`, `total` and `total_pending_approval` are unchanged
-- [ ] The tool description reflects the trimmed shape
-- [ ] Tests through the MCP client cover the trimmed shape and pagination
-- [ ] If ticket 01 has landed, the committed bundle is rebuilt and the staleness check passes
+- [x] Each item contains only: id, Request type code/name, the date(s) the Request applies to, overall status, current approval step, next approver's name and Staff code, note, created date
+- [x] Approval step conditions and org/department id lists are absent from the output
+- [x] `has_more`, `next_offset`, `total` and `total_pending_approval` are unchanged
+- [x] The tool description reflects the trimmed shape
+- [x] Tests through the MCP client cover the trimmed shape and pagination
+- [x] If ticket 01 has landed, the committed bundle is rebuilt and the staleness check passes

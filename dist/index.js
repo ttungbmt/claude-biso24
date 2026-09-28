@@ -21903,6 +21903,55 @@ function paginate(items, page) {
 	};
 }
 //#endregion
+//#region src/modules/iam/requests/request-summary.ts
+/** Step statuses that mean the Request is still open at that step. */
+const OPEN_STEP_STATUSES = /* @__PURE__ */ new Set(["NEW", "WAITING_FOR_APPROVAL"]);
+/** Step statuses of steps that are done or not reached yet. */
+const PASSED_OR_PENDING = /* @__PURE__ */ new Set([
+	"SENT",
+	"APPROVED",
+	"NOT_STARTED"
+]);
+function summarizeRequest(request, typeNames) {
+	const data = request.requestData ?? {};
+	const step = request.approvalSteps?.find((s) => !PASSED_OR_PENDING.has(s.status ?? ""));
+	const approver = request.approvalForNextStep;
+	const days = data.leaveDayDetails?.map((d) => ({
+		date: fromDayMonthYear(d.day),
+		part: d.option
+	}));
+	return {
+		id: request._id,
+		type: {
+			code: request.requestCategoryCode,
+			name: typeNames.get(request.requestCategoryId ?? "")
+		},
+		from: data.from ?? data.workingDate,
+		to: data.to ?? data.workingDate,
+		...days?.length ? { days } : {},
+		status: request.status,
+		...step ? { current_step: {
+			title: step.stepTitle,
+			status: step.status
+		} } : {},
+		...approver && step && OPEN_STEP_STATUSES.has(step.status ?? "") ? { next_approver: {
+			name: approver.fullName,
+			staff_code: approver.staffCode
+		} } : {},
+		note: request.notes,
+		created_at: request.createdAt
+	};
+}
+/** Request type id → display name. */
+function typeNameIndex(types) {
+	return new Map(types.map((t) => [t._id, t.title ?? t.code ?? ""]));
+}
+/** "07/08/2026" → "2026-08-07"; anything else is returned unchanged. */
+function fromDayMonthYear(day) {
+	const match = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(day);
+	return match ? `${match[3]}-${match[2]}-${match[1]}` : day;
+}
+//#endregion
 //#region src/modules/iam/requests/requests.api.ts
 /** Requests (leave, overtime...) of the logged-in employee. */
 function listMyRequests(client, { type, page, limit }) {
@@ -21922,22 +21971,23 @@ function registerRequestTools(server, client) {
 	defineTool(server, {
 		name: "biso24_list_my_requests",
 		title: "List my requests",
-		description: "List requests (leave, overtime, business trip, shift change...) of the logged-in employee (identified by the token), newest first, paginated. Also returns how many are pending approval. To see which request types exist, use biso24_list_request_types.",
+		description: "List requests (leave, attendance correction, overtime, business trip, shift change...) of the logged-in employee (identified by the token), newest first, paginated. Each item is a summary: id, type code/name, from/to dates the request applies to (plus per-day parts for leave), status (NEW = draft not yet submitted, PROCESSING, APPROVED, REJECTED), the current approval step, the next approver while one is awaited, note and creation time. Also returns how many are pending approval. To see which request types exist, use biso24_list_request_types.",
 		inputSchema: {
 			type: string().default("OWNER").describe("Filter; OWNER = requests created by me (other values unverified)."),
 			...paginationShape
 		},
 		annotations: READ_ONLY,
 		handler: async ({ type, limit, offset }) => {
-			const result = await listMyRequests(client, {
+			const [result, types] = await Promise.all([listMyRequests(client, {
 				type,
 				...toPageParams({
 					limit,
 					offset
 				})
-			});
+			}), listRequestTypes(client)]);
+			const typeNames = typeNameIndex(types);
 			return {
-				items: result.data,
+				items: result.data.map((r) => summarizeRequest(r, typeNames)),
 				...pageMeta({
 					limit,
 					offset
