@@ -35,9 +35,6 @@ assert {
 }
 
 docs {
-  Logs in with the account from `bruno/.env` (a symlink to the repo-root `.env`) and stores the JWT
-  in `token` and the logged-in employee's id in `employeeId`; the other requests use them.
-  These are in-memory runtime variables: run Login again after the JWT expires (~24h, no refresh
-  flow) or after VS Code reloads the Bruno extension.
-  Response `data`: the user profile, `tenantInfo`, `token`, `refreshToken`.
+  Stores `token` and `employeeId` for the other requests (in-memory: rerun after the JWT expires or
+  the Bruno extension reloads). API reference: `docs/api/iam/auth.md`.
 }
