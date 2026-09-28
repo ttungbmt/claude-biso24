@@ -1,0 +1,4 @@
+[tools]
+node = "lts"
+"npm:@usebruno/cli" = "latest"
+pnpm = "latest"
