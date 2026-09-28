@@ -1,4 +1,4 @@
-import type { Biso24Client } from "../../../core/http/biso24-client.js";
+import type { Biso24Client } from "#core/http/biso24-client.js";
 
 /** Timekeeping data of the logged-in employee for one month. */
 export function getPersonalTimekeeping(

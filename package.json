@@ -7,12 +7,19 @@
   "bin": {
     "biso24-mcp-server": "dist/index.js"
   },
+  "imports": {
+    "#core/*": {
+      "source": "./src/core/*",
+      "default": "./dist/core/*"
+    },
+    "#test/*": "./test/*"
+  },
   "files": [
     "dist"
   ],
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
-    "dev": "mise exec -- tsx watch src/index.ts",
+    "dev": "mise exec -- tsx --conditions=source watch src/index.ts",
     "start": "node dist/index.js",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",

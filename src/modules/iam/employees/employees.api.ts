@@ -1,4 +1,4 @@
-import type { Biso24Client } from "../../../core/http/biso24-client.js";
+import type { Biso24Client } from "#core/http/biso24-client.js";
 
 export interface GetEmployeeParams {
   id: string;

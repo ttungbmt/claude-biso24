@@ -1,7 +1,7 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
-import type { Biso24Client } from "../../../core/http/biso24-client.js";
-import { defineTool, READ_ONLY } from "../../../core/mcp/define-tool.js";
+import type { Biso24Client } from "#core/http/biso24-client.js";
+import { defineTool, READ_ONLY } from "#core/mcp/define-tool.js";
 import { getEmployee } from "./employees.api.js";
 
 export function registerEmployeeTools(

@@ -1,4 +1,4 @@
-import type { Biso24Client } from "../../../core/http/biso24-client.js";
+import type { Biso24Client } from "#core/http/biso24-client.js";
 
 /** Page-based list returned by `GET /v1/request-employees`. */
 export interface RequestEmployeePage {

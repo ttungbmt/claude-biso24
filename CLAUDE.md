@@ -38,6 +38,7 @@ test/helpers/     mcp-harness.ts: connectTestClient(fetchMock), envelopeFetch() 
 - New service: add its URL to `config.ts` + `.env.example`, a field in `ApiClients` (`core/http/clients.ts`), a `modules/<service>/` folder, and one line in `modules/index.ts`.
 - Tests are co-located (`*.test.ts` next to the source).
 - Cross-directory imports use Node subpath imports (`package.json` `"imports"`): `#core/...` and `#test/...` instead of `../../../`. `#core` resolves to `src/` under the `source` condition (tsc `customConditions`, vitest, `tsx --conditions=source`) and to `dist/` otherwise. Imports within a module stay relative.
+- Cross-directory imports use Node subpath imports (`package.json` `"imports"`): `#core/...` and `#test/...` instead of `../../../`. `#core` resolves to `src/` under the `source` condition (tsc `customConditions`, vitest, `tsx --conditions=source`) and to `dist/` otherwise. Imports within a module stay relative.
 - `<service>` = one Biso24 host / base URL (not a business domain): `iam` is iam.biso24.org, which also serves HR data.
   Bruno mirrors the modules: `bruno/<service>/<resource>/` ↔ `src/modules/<service>/<resource>/` (exception: `bruno/iam/auth/`, whose code lives in `core/http/`).
 

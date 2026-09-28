@@ -1,7 +1,7 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
-import type { Biso24Client } from "../../../core/http/biso24-client.js";
-import { defineTool, READ_ONLY } from "../../../core/mcp/define-tool.js";
+import type { Biso24Client } from "#core/http/biso24-client.js";
+import { defineTool, READ_ONLY } from "#core/mcp/define-tool.js";
 import { getWorkShiftOnDate } from "./work-shifts.api.js";
 
 export function registerWorkShiftTools(
