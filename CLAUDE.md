@@ -37,6 +37,7 @@ test/helpers/     mcp-harness.ts: connectTestClient(fetchMock), envelopeFetch() 
 - `core/` never imports from `modules/`. Each `modules/<service>/index.ts` exports `register<Service>Tools(server, client)`, called from `src/modules/index.ts`.
 - New service: add its URL to `config.ts` + `.env.example`, a field in `ApiClients` (`core/http/clients.ts`), a `modules/<service>/` folder, and one line in `modules/index.ts`.
 - Tests are co-located (`*.test.ts` next to the source).
+- Cross-directory imports use Node subpath imports (`package.json` `"imports"`): `#core/...` and `#test/...` instead of `../../../`. `#core` resolves to `src/` under the `source` condition (tsc `customConditions`, vitest, `tsx --conditions=source`) and to `dist/` otherwise. Imports within a module stay relative.
 - `<service>` = one Biso24 host / base URL (not a business domain): `iam` is iam.biso24.org, which also serves HR data.
   Bruno mirrors the modules: `bruno/<service>/<resource>/` ↔ `src/modules/<service>/<resource>/` (exception: `bruno/iam/auth/`, whose code lives in `core/http/`).
 
@@ -46,3 +47,17 @@ test/helpers/     mcp-harness.ts: connectTestClient(fetchMock), envelopeFetch() 
 - Always set `title`, `description` (say when to use / not use it), a zod `inputSchema` with `.describe()` on each field, and `annotations` (`READ_ONLY` for GET tools).
 - List tools spread `paginationShape` (`limit`/`offset`) and return `has_more`/`next_offset`: use `toPageParams` + `pageMeta` for page-based endpoints, `paginate` for unpaginated ones.
 - Every new tool needs a test that calls it through `connectTestClient` with a mocked `fetch`.
+
+## Agent skills
+
+### Issue tracker
+
+Issues and specs live as local markdown files under `.scratch/<feature>/`. See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+Default vocabulary: `needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, `wontfix`. See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Single-context: one `CONTEXT.md` and `docs/adr/` at the repo root. See `docs/agents/domain.md`.
