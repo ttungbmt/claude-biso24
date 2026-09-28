@@ -1,9 +1,9 @@
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
 import { type Mock, vi } from "vitest";
-import { createApiClients } from "../../src/core/http/clients.js";
-import { createServer } from "../../src/server.js";
-import { fakeJwt } from "./fake-jwt.js";
+import { createApiClients } from "../../src/core/http/clients";
+import { createServer } from "../../src/server";
+import { fakeJwt } from "./fake-jwt";
 
 export const testConfig = {
   iamUrl: "https://iam.test",

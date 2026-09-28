@@ -3,7 +3,7 @@ import {
   connectTestClient,
   envelopeFetch,
   fetchCall,
-} from "#test/helpers/mcp-harness.js";
+} from "#test/helpers/mcp-harness";
 
 describe("biso24_get_my_work_shift", () => {
   it("sends the date as currentDate", async () => {

@@ -5,7 +5,7 @@ import {
   envelopeFetch,
   fetchCall,
   resultText,
-} from "#test/helpers/mcp-harness.js";
+} from "#test/helpers/mcp-harness";
 
 describe("request tools", () => {
   it("biso24_list_my_requests maps offset to page and reports has_more", async () => {

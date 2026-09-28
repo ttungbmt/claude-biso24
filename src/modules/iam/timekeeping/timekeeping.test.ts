@@ -4,7 +4,7 @@ import {
   envelopeFetch,
   fetchCall,
   resultText,
-} from "#test/helpers/mcp-harness.js";
+} from "#test/helpers/mcp-harness";
 
 describe("timekeeping tools", () => {
   it("biso24_get_my_timekeeping sends a zero-padded month", async () => {

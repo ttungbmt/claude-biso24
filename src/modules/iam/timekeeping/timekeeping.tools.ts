@@ -1,11 +1,11 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
-import type { Biso24Client } from "#core/http/biso24-client.js";
-import { defineTool, READ_ONLY } from "#core/mcp/define-tool.js";
+import type { Biso24Client } from "#core/http/biso24-client";
+import { defineTool, READ_ONLY } from "#core/mcp/define-tool";
 import {
   getPersonalTimekeeping,
   getTimekeepingDashboard,
-} from "./timekeeping.api.js";
+} from "./timekeeping.api";
 
 const year = z
   .number()

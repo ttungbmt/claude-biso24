@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { loadConfig } from "./config.js";
+import { loadConfig } from "./config";
 
 const env = {
   BISO24_DOMAIN: "acme.biso24.net",

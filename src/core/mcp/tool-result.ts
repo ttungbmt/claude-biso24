@@ -1,6 +1,6 @@
 import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
-import { CHARACTER_LIMIT } from "../../constants.js";
-import { Biso24ApiError, Biso24AuthError } from "../http/errors.js";
+import { CHARACTER_LIMIT } from "../../constants";
+import { Biso24ApiError, Biso24AuthError } from "../http/errors";
 
 export function truncate(text: string, limit = CHARACTER_LIMIT): string {
   if (text.length <= limit) return text;

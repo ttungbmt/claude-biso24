@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
-import { fakeJwt } from "#test/helpers/fake-jwt.js";
-import { Biso24AuthError } from "./errors.js";
-import { SessionAuth } from "./session-auth.js";
+import { fakeJwt } from "#test/helpers/fake-jwt";
+import { Biso24AuthError } from "./errors";
+import { SessionAuth } from "./session-auth";
 
 const options = {
   iamUrl: "https://iam.test",

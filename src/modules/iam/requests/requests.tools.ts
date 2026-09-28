@@ -1,14 +1,14 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
-import type { Biso24Client } from "#core/http/biso24-client.js";
-import { defineTool, READ_ONLY } from "#core/mcp/define-tool.js";
+import type { Biso24Client } from "#core/http/biso24-client";
+import { defineTool, READ_ONLY } from "#core/mcp/define-tool";
 import {
   pageMeta,
   paginate,
   paginationShape,
   toPageParams,
-} from "#core/mcp/pagination.js";
-import { listMyRequests, listRequestTypes } from "./requests.api.js";
+} from "#core/mcp/pagination";
+import { listMyRequests, listRequestTypes } from "./requests.api";
 
 export function registerRequestTools(
   server: McpServer,

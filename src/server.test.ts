@@ -3,7 +3,7 @@ import {
   connectTestClient,
   envelopeFetch,
   resultText,
-} from "#test/helpers/mcp-harness.js";
+} from "#test/helpers/mcp-harness";
 
 describe("MCP server", () => {
   it("registers every tool with the biso24_ prefix", async () => {

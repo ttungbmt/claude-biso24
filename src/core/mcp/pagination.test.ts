@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { pageMeta, paginate, toPageParams } from "./pagination.js";
+import { pageMeta, paginate, toPageParams } from "./pagination";
 
 describe("pagination", () => {
   it("maps offset to a 1-based page", () => {

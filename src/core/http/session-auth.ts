@@ -1,7 +1,7 @@
-import type { Credentials } from "../../config.js";
-import { REQUEST_TIMEOUT_MS } from "../../constants.js";
-import { readResponse } from "./biso24-client.js";
-import { Biso24ApiError, Biso24AuthError } from "./errors.js";
+import type { Credentials } from "../../config";
+import { REQUEST_TIMEOUT_MS } from "../../constants";
+import { readResponse } from "./biso24-client";
+import { Biso24ApiError, Biso24AuthError } from "./errors";
 
 /** Supplies a valid Bearer token to Biso24Client. */
 export interface TokenProvider {

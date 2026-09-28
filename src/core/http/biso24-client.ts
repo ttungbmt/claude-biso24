@@ -1,6 +1,6 @@
-import { REQUEST_TIMEOUT_MS } from "../../constants.js";
-import { Biso24ApiError } from "./errors.js";
-import type { TokenProvider } from "./session-auth.js";
+import { REQUEST_TIMEOUT_MS } from "../../constants";
+import { Biso24ApiError } from "./errors";
+import type { TokenProvider } from "./session-auth";
 
 export type HttpMethod = "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
 

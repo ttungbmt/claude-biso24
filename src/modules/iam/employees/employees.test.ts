@@ -5,7 +5,7 @@ import {
   fetchCall,
   resultText,
   TEST_TOKEN,
-} from "#test/helpers/mcp-harness.js";
+} from "#test/helpers/mcp-harness";
 
 describe("biso24_get_employee", () => {
   it("fetches the employee with the requested includes", async () => {

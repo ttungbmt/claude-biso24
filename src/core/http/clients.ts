@@ -1,6 +1,6 @@
-import type { Config } from "../../config.js";
-import { Biso24Client } from "./biso24-client.js";
-import { SessionAuth } from "./session-auth.js";
+import type { Config } from "../../config";
+import { Biso24Client } from "./biso24-client";
+import { SessionAuth } from "./session-auth";
 
 /** One client per Biso24 service. Add a field here when a new service is wrapped. */
 export interface ApiClients {

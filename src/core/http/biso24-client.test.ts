@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
-import { Biso24Client } from "./biso24-client.js";
-import type { Biso24ApiError } from "./errors.js";
-import type { TokenProvider } from "./session-auth.js";
+import { Biso24Client } from "./biso24-client";
+import type { Biso24ApiError } from "./errors";
+import type { TokenProvider } from "./session-auth";
 
 /** Hands out token-1, token-2... each time the previous one is invalidated. */
 function stubAuth() {

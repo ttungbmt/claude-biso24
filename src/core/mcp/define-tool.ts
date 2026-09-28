@@ -7,7 +7,7 @@ import type {
   ZodRawShapeCompat,
 } from "@modelcontextprotocol/sdk/server/zod-compat.js";
 import type { ToolAnnotations } from "@modelcontextprotocol/sdk/types.js";
-import { ok, toolError } from "./tool-result.js";
+import { ok, toolError } from "./tool-result";
 
 /** Annotations for tools that only read from the Biso24 API. */
 export const READ_ONLY: ToolAnnotations = {

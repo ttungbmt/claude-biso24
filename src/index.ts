@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
-import { loadConfig } from "./config.js";
-import { createApiClients } from "./core/http/clients.js";
-import { createServer } from "./server.js";
+import { loadConfig } from "./config";
+import { createApiClients } from "./core/http/clients";
+import { createServer } from "./server";
 
 async function main(): Promise<void> {
   const server = createServer(createApiClients(loadConfig()));
