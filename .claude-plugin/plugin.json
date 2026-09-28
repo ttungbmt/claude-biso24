@@ -1,6 +1,6 @@
 {
   "name": "biso24",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Ask Claude about your own Biso24 timekeeping, work shifts and requests (read-only).",
   "author": { "name": "ttungbmt" },
   "repository": "https://github.com/ttungbmt/claude-biso24",
