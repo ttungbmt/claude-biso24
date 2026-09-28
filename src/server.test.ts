@@ -48,6 +48,7 @@ describe("MCP server", () => {
     expect(resultText(result)).toMatch(
       /Login to Biso24 failed.*Wrong password/,
     );
+    expect(resultText(result)).toMatch(/\/plugin configure biso24/);
     expect(resultText(result)).toMatch(/BISO24_EMAIL/);
     expect(resultText(result)).not.toMatch(/"pw"|: pw\b/);
   });

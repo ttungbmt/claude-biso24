@@ -30,12 +30,22 @@ activated, or when a command is run through `mise exec`. The server itself does 
 
 ## Using with Claude Code
 
-The repo ships a `.mcp.json` that starts the server with `mise exec -- node dist/index.js`,
-so the variables come from `.env` without exporting anything:
+The repo is a Claude Code plugin (`biso24`, in `.claude-plugin/`), which runs the committed bundle
+`dist/index.js` and asks for the email, password, org id and Tenant domain in Claude Code's plugin
+config dialog (`/plugin configure biso24` to change them). Try it from a clone with:
 
 ```bash
-pnpm build && claude
+claude --plugin-dir .
 ```
+
+For development, register the from-source server `biso24-dev` once (local scope; it runs through
+`mise exec`, so the variables come from `.env` without exporting anything):
+
+```bash
+pnpm mcp:dev && claude
+```
+
+After changing `src/`, run `pnpm build` and commit `dist/index.js`; `pnpm test` fails on a stale bundle.
 
 ## Tools
 

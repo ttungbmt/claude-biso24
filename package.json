@@ -17,6 +17,7 @@
   "scripts": {
     "build": "tsdown",
     "dev": "mise exec -- tsx watch src/index.ts",
+    "mcp:dev": "claude mcp add --scope local biso24-dev -- mise exec -- node --import tsx src/index.ts",
     "start": "node dist/index.js",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",

@@ -1,0 +1,48 @@
+{
+  "name": "biso24",
+  "version": "0.1.0",
+  "description": "Ask Claude about your own Biso24 timekeeping, work shifts and requests (read-only).",
+  "author": { "name": "ttungbmt" },
+  "repository": "https://github.com/ttungbmt/claude-biso24",
+  "license": "MIT",
+  "keywords": ["biso24", "hr", "timekeeping", "mcp"],
+  "userConfig": {
+    "email": {
+      "type": "string",
+      "title": "Biso24 email",
+      "description": "Email you log in to Biso24 with.",
+      "required": true
+    },
+    "password": {
+      "type": "string",
+      "title": "Biso24 password",
+      "description": "Password you log in to Biso24 with; kept in your OS credential store.",
+      "required": true,
+      "sensitive": true
+    },
+    "org_id": {
+      "type": "string",
+      "title": "Organization id",
+      "description": "Your Organization's id (the orgId sent by the Biso24 web app's login request).",
+      "required": true
+    },
+    "domain": {
+      "type": "string",
+      "title": "Tenant domain",
+      "description": "Your company's Biso24 host, e.g. acme.biso24.net.",
+      "required": true
+    }
+  },
+  "mcpServers": {
+    "biso24": {
+      "command": "node",
+      "args": ["${CLAUDE_PLUGIN_ROOT}/dist/index.js"],
+      "env": {
+        "BISO24_EMAIL": "${user_config.email}",
+        "BISO24_PASSWORD": "${user_config.password}",
+        "BISO24_ORG_ID": "${user_config.org_id}",
+        "BISO24_DOMAIN": "${user_config.domain}"
+      }
+    }
+  }
+}

@@ -11,14 +11,20 @@ MCP server (TypeScript, stdio) wrapping the Biso24 API. Packages are managed wit
 
 ## Commands
 - `pnpm build` · `pnpm dev` · `pnpm test` · `pnpm typecheck` · `pnpm lint` / `pnpm format`
+- `pnpm build` writes the single-file bundle `dist/index.js` that the plugin runs; it is committed. Rebuild and commit it with every `src/` change: `pnpm test` fails when it is stale.
+- `pnpm mcp:dev` — register the `biso24-dev` MCP server (from source, via mise) in Claude Code's local scope, once per clone. There is no root `.mcp.json`: an installed plugin would load it too (ADR 0002).
+- `claude plugin validate .` (marketplace) and `claude plugin validate .claude-plugin/plugin.json` after editing the manifests; `claude --plugin-dir .` to try the plugin
 - `pnpm inspect` — build, then open the MCP Inspector
 - `pnpm api` — run the Bruno collection (`bruno/`; vars from `bruno/.env`, a git-ignored symlink to the root `.env`, since Bruno reads only `<collection>/.env` and the VS Code extension doesn't get mise env; no Bruno environment) against the real API; try endpoints there before wrapping them as tools
-- Requires env `BISO24_EMAIL`, `BISO24_PASSWORD`, `BISO24_ORG_ID`, `BISO24_DOMAIN` (optional `BISO24_IAM_URL`) in the git-ignored `.env`, loaded by mise (`mise.toml` `[env]`; `.mcp.json` runs the server via `mise exec`); see `.env.example`. Never put real credentials in tracked files.
+- Requires env `BISO24_EMAIL`, `BISO24_PASSWORD`, `BISO24_ORG_ID`, `BISO24_DOMAIN` (optional `BISO24_IAM_URL`) in the git-ignored `.env`, loaded by mise (`mise.toml` `[env]`; `biso24-dev` runs the server via `mise exec`). The installed plugin gets them from its user config instead (`.claude-plugin/plugin.json`); see `.env.example`. Never put real credentials in tracked files.
 
 ## Structure
 ```
+.claude-plugin/   plugin.json (the `biso24` plugin: user config + inline MCP server running dist/index.js),
+                  marketplace.json (the `ttungbmt` marketplace; keep plugin `version` equal to package.json)
+dist/index.js     committed bundle (tsdown; all dependencies inlined, needs only Node)
 src/
-  index.ts        entry point, stdio transport
+  index.ts        entry point, stdio transport (index.test.ts: spawns the committed bundle, staleness check)
   server.ts       createServer(clients: ApiClients)
   config.ts       env → Config
   core/http/      Biso24Client (Bearer + `domain` headers, unwraps the {success,data} envelope,

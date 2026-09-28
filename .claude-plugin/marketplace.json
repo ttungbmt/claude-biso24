@@ -1,0 +1,12 @@
+{
+  "name": "ttungbmt",
+  "owner": { "name": "ttungbmt" },
+  "description": "Claude Code plugins by ttungbmt.",
+  "plugins": [
+    {
+      "name": "biso24",
+      "source": "./",
+      "description": "Ask Claude about your own Biso24 timekeeping, work shifts and requests (read-only)."
+    }
+  ]
+}

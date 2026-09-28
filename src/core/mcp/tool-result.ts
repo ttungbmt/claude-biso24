@@ -28,7 +28,7 @@ export function toolError(error: unknown): CallToolResult {
 
 export function describeError(error: unknown): string {
   if (error instanceof Biso24AuthError) {
-    return `Error: Login to Biso24 failed (${error.message}). Check BISO24_EMAIL, BISO24_PASSWORD, BISO24_ORG_ID and BISO24_DOMAIN.`;
+    return `Error: Login to Biso24 failed (${error.message}). Check the email, password, organization id and Tenant domain: in Claude Code run \`/plugin configure biso24\`; when running the server directly, set BISO24_EMAIL, BISO24_PASSWORD, BISO24_ORG_ID and BISO24_DOMAIN.`;
   }
   if (error instanceof Biso24ApiError) {
     switch (error.status) {
