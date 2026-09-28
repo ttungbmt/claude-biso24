@@ -1,8 +1,0 @@
-{
-  "mcpServers": {
-    "biso24": {
-      "command": "mise",
-      "args": ["exec", "--", "node", "dist/index.js"]
-    }
-  }
-}
