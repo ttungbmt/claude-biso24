@@ -21,6 +21,7 @@ import {
 import { summarizeRequest, typeNameIndex } from "./request-summary";
 import {
   type ApproverCandidate,
+  approveRequests,
   createRequest,
   deleteRequests,
   type EmployeeRequest,
@@ -28,12 +29,15 @@ import {
   listMyRequests,
   listRequestsToApprove,
   listRequestTypes,
+  type NextApprover,
   type RequestEmployeePage,
   type RequestType,
   submitRequest,
 } from "./requests.api";
 
 const ATTENDANCE_CORRECTION = "UPDATE_ATTENDANCE";
+/** Most requests one biso24_approve_requests call may approve (ADR 0006). */
+const MAX_APPROVALS = 20;
 
 const correctionShape = {
   working_date: z.iso
@@ -112,7 +116,8 @@ export function registerRequestTools(
       'requests do I need to approve?" (total) or "whose requests are waiting for me?". Only ' +
       "open requests: requests I already approved or rejected are not listed. Each item has the " +
       "same summary as biso24_list_my_requests plus the requester (name, staff code, department). " +
-      "For requests I filed myself, use biso24_list_my_requests.",
+      "To approve them, use biso24_approve_requests. For requests I filed myself, use " +
+      "biso24_list_my_requests.",
     inputSchema: {
       ...requestTypeCodeShape,
       ...paginationShape,
@@ -207,6 +212,62 @@ export function registerRequestTools(
       // The response shape is unverified; fall back to the draft we looked up.
       const request = isRequest(sent) ? sent : draft;
       return { submitted: summarizeRequest(request, typeNameIndex(types)) };
+    },
+  });
+
+  defineTool(server, {
+    name: "biso24_approve_requests",
+    title: "Approve requests awaiting my approval",
+    description:
+      "Approve requests of other employees that await the logged-in employee's approval, like " +
+      'the web app\'s "Duyệt": each moves on to its next approval step, whose approver is ' +
+      "filled in automatically. Use only when the user explicitly asks to approve specific " +
+      "requests; get their ids from biso24_list_requests_to_approve and show the user which " +
+      "requests will be approved first. All or nothing: if any id does not await my approval, " +
+      "or is at its last approval step (approve that one in the Biso24 web app), nothing is " +
+      "approved. Cannot be undone. Rejecting is not supported. Returns a summary of each " +
+      "approved request and who it was forwarded to.",
+    inputSchema: {
+      request_ids: z
+        .array(z.string().min(1))
+        .min(1)
+        .max(MAX_APPROVALS)
+        .describe(
+          `Ids of the requests to approve (1-${MAX_APPROVALS}), from biso24_list_requests_to_approve.`,
+        ),
+    },
+    annotations: WRITE,
+    handler: async ({ request_ids }) => {
+      const ids = [...new Set(request_ids)];
+      const [awaiting, types] = await Promise.all([
+        findRequestsAwaitingMe(client, ids),
+        listRequestTypes(client),
+      ]);
+      const missing = ids.filter((id) => !awaiting.has(id));
+      if (missing.length > 0) {
+        throw new Error(
+          `Not awaiting the logged-in employee's approval: ${missing.join(", ")}. Nothing was ` +
+            "approved. Use biso24_list_requests_to_approve to find requests I can approve.",
+        );
+      }
+      const approvals = ids.map((id) => {
+        const request = awaiting.get(id) as EmployeeRequest;
+        return { request, next: nextStepApprover(request) };
+      });
+      await approveRequests(
+        client,
+        approvals.map(({ request, next }) => ({
+          _id: request._id,
+          approvalForNextStep: next,
+        })),
+      );
+      const typeNames = typeNameIndex(types);
+      return {
+        approved: approvals.map(({ request, next }) => ({
+          ...summarizeRequest(request, typeNames, { withRequester: true }),
+          forwarded_to: { name: next.fullName, staff_code: next.staffCode },
+        })),
+      };
     },
   });
 
@@ -434,6 +495,64 @@ async function findMyDraft(
       return draft;
     }
   }
+}
+
+/**
+ * The Requests among `ids` that await the logged-in employee's approval, by
+ * id, looked up in the RESPONSIBLE list: this checks they await me (ADR 0006).
+ */
+async function findRequestsAwaitingMe(
+  client: Biso24Client,
+  ids: string[],
+): Promise<Map<string, EmployeeRequest>> {
+  const wanted = new Set(ids);
+  const found = new Map<string, EmployeeRequest>();
+  const limit = 100;
+  for (let page = 1; ; page++) {
+    const result = await listRequestsToApprove(client, { page, limit });
+    for (const r of result.data) {
+      if (wanted.has(r._id)) found.set(r._id, r);
+    }
+    if (
+      found.size === wanted.size ||
+      page >= result.totalPages ||
+      result.data.length === 0
+    ) {
+      return found;
+    }
+  }
+}
+
+/**
+ * The approver of the step after the one awaiting me, which the web app fills
+ * in when approving. Refuses the last step: its body is not verified yet.
+ */
+function nextStepApprover(request: EmployeeRequest): NextApprover {
+  const steps = request.approvalSteps ?? [];
+  const current = steps.findIndex((s) => s.status === "WAITING_FOR_APPROVAL");
+  const next = current >= 0 ? steps[current + 1] : undefined;
+  if (!next) {
+    throw new Error(
+      `Request ${request._id} is at its last approval step, which this tool cannot approve ` +
+        "yet. Nothing was approved; approve that request in the Biso24 web app and retry " +
+        "without it.",
+    );
+  }
+  const [approver, ...others] = next.approvers ?? [];
+  if (!approver || others.length > 0) {
+    throw new Error(
+      `The next step "${next.stepTitle ?? ""}" of request ${request._id} has ` +
+        `${next.approvers?.length ?? 0} approvers, so it is unclear who to forward it to. ` +
+        "Nothing was approved; approve that request in the Biso24 web app.",
+    );
+  }
+  return {
+    employeeId: approver.employeeId,
+    staffCode: approver.staffCode,
+    fullName: approver.fullName,
+    departmentName: approver.departmentName,
+    positionName: approver.positionName,
+  };
 }
 
 function isRequest(value: unknown): value is EmployeeRequest {

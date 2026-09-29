@@ -82,6 +82,10 @@ The Employee whose approval a Request awaits at its current step.
 A "Request awaiting my approval" is one where the logged-in Employee is the Approver; Biso24 lists only those still open, not the ones already approved or rejected.
 _Avoid_: Responsible (the API's `type=RESPONSIBLE`), pending request (ambiguous: mine awaiting others, or others' awaiting me)
 
+**Approval**:
+The Approver accepting a Request at its current step (the web app's "Duyệt"). The Request moves on to its next step's Approver, or is approved for good after the last step.
+_Avoid_: Accept, confirm
+
 ### Plugin
 
 **Plugin**:
@@ -97,7 +101,7 @@ A packaged workflow in the Plugin that combines tools to answer an Employee's re
 _Avoid_: Command, prompt
 
 **Write tool**:
-A tool that changes data in Biso24 rather than only reading it; it acts only on the Logged-in employee's own data.
+A tool that changes data in Biso24 rather than only reading it; it acts only on the Logged-in employee's own data, except for an Approval of a Request awaiting them.
 _Avoid_: Action, mutation
 
 **Service**:

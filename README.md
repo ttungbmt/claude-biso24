@@ -1,9 +1,9 @@
 # claude-biso24
 
 A Claude Code plugin that lets you ask Claude about your own [Biso24](https://biso24.org) HR data:
-your timekeeping, work shifts and requests. It only reads, with one exception: it can delete a
-draft request of your own when you ask it to (Claude Code asks your permission first). It never
-checks in, submits, approves or touches anyone else's requests.
+your timekeeping, work shifts and requests. Besides reading, and only when you ask (Claude Code
+asks your permission first), it can draft, submit or delete your own requests, and approve
+requests that await your approval. It never checks in, rejects, or touches other requests.
 
 ## Install
 
@@ -61,6 +61,7 @@ The skills use these tools, which you can also ask about directly:
 | `biso24_create_my_attendance_correction` | Save an attendance correction for a date as a draft (not submitted) |
 | `biso24_submit_my_request` | Submit one of my draft requests for approval ("Gửi duyệt") |
 | `biso24_delete_my_request` | Delete one of my draft (not yet submitted) requests; cannot be undone |
+| `biso24_approve_requests` | Approve up to 20 requests awaiting my approval ("Duyệt"), forwarding each to its next approver; cannot be undone |
 
 Biso24 has no long-lived API token. The MCP server logs in with your account on the first tool
 call, keeps the JWT (valid ~24h) in memory, and logs in again shortly before it expires or when

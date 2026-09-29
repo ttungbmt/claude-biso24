@@ -761,6 +761,169 @@ describe("request tools", () => {
     expect(resultText(result)).toMatch(/several Work shifts \(CA_HC, CA_N\)/);
   });
 
+  const person = (staffCode: string, fullName: string) => ({
+    employeeId: `emp-${staffCode}`,
+    staffCode,
+    fullName,
+    avatar: "",
+    companyEmail: "",
+    departmentName: "Software",
+    positionName: "Manager",
+    _id: `sub-${staffCode}`,
+  });
+
+  /** A leave request awaiting my approval at step 2, then forwarded to `next`. */
+  const awaitingMyApproval = (id: string, next: unknown[] | null) => ({
+    ...rejectedLeave,
+    _id: id,
+    employeeDetail: { staffCode: "089", fullName: "Team Member" },
+    approvalSteps: [
+      { stepIndex: 1, stepTitle: "Create", status: "SENT", conditions },
+      {
+        stepIndex: 2,
+        stepTitle: "Direct manager",
+        status: "WAITING_FOR_APPROVAL",
+        approvers: [person("043", "Me")],
+        conditions: [],
+      },
+      ...(next
+        ? [
+            {
+              stepIndex: 3,
+              stepTitle: "Deputy head",
+              status: "NOT_STARTED",
+              approvers: next,
+              conditions: [],
+            },
+          ]
+        : []),
+    ],
+    status: "PROCESSING",
+    approvalForNextStep: person("043", "Me"),
+  });
+
+  const approvalRoutes = (data: unknown[]) =>
+    routeFetch({
+      "GET /v1/request-employees": draftPage(data),
+      "POST /v1/request-employees/multiple-approvals": null,
+      "/v1/request-managements": requestTypes,
+    });
+
+  const approvalPosts = (fetchMock: ReturnType<typeof routeFetch>) =>
+    apiCalls(fetchMock)
+      .map((_, n) => fetchCall(fetchMock, n))
+      .filter((c) => c.url.pathname.endsWith("/multiple-approvals"));
+
+  it("biso24_approve_requests forwards each request to its next step's approver", async () => {
+    const fetchMock = approvalRoutes([
+      awaitingMyApproval("a1", [person("006", "Deputy One")]),
+      awaitingMyApproval("a2", [person("007", "Deputy Two")]),
+      awaitingMyApproval("a3", [person("006", "Deputy One")]),
+    ]);
+    const client = await connectTestClient(fetchMock);
+
+    const result = await client.callTool({
+      name: "biso24_approve_requests",
+      arguments: { request_ids: ["a1", "a2", "a1"] },
+    });
+
+    const lookup = fetchCall(fetchMock);
+    expect(Object.fromEntries(lookup.url.searchParams)).toEqual({
+      type: "RESPONSIBLE",
+      page: "1",
+      limit: "100",
+    });
+    const posts = approvalPosts(fetchMock);
+    expect(posts).toHaveLength(1);
+    expect(posts[0]?.method).toBe("POST");
+    expect(JSON.parse(String(posts[0]?.body))).toEqual([
+      {
+        _id: "a1",
+        approvalForNextStep: {
+          employeeId: "emp-006",
+          staffCode: "006",
+          fullName: "Deputy One",
+          departmentName: "Software",
+          positionName: "Manager",
+        },
+      },
+      {
+        _id: "a2",
+        approvalForNextStep: {
+          employeeId: "emp-007",
+          staffCode: "007",
+          fullName: "Deputy Two",
+          departmentName: "Software",
+          positionName: "Manager",
+        },
+      },
+    ]);
+    expect(result.structuredContent).toMatchObject({
+      approved: [
+        {
+          id: "a1",
+          type: { code: "LEAVE", name: "Leave" },
+          requester: { name: "Team Member", staff_code: "089" },
+          forwarded_to: { name: "Deputy One", staff_code: "006" },
+        },
+        { id: "a2", forwarded_to: { name: "Deputy Two", staff_code: "007" } },
+      ],
+    });
+  });
+
+  it("biso24_approve_requests approves nothing when an id does not await my approval", async () => {
+    const fetchMock = approvalRoutes([
+      awaitingMyApproval("a1", [person("006", "Deputy One")]),
+    ]);
+    const client = await connectTestClient(fetchMock);
+
+    const result = await client.callTool({
+      name: "biso24_approve_requests",
+      arguments: { request_ids: ["a1", "not-mine"] },
+    });
+
+    expect(result.isError).toBe(true);
+    expect(resultText(result)).toMatch(/not-mine/);
+    expect(approvalPosts(fetchMock)).toHaveLength(0);
+  });
+
+  it("biso24_approve_requests approves nothing when a request is at its last step", async () => {
+    const fetchMock = approvalRoutes([
+      awaitingMyApproval("a1", [person("006", "Deputy One")]),
+      awaitingMyApproval("last", null),
+    ]);
+    const client = await connectTestClient(fetchMock);
+
+    const result = await client.callTool({
+      name: "biso24_approve_requests",
+      arguments: { request_ids: ["a1", "last"] },
+    });
+
+    expect(result.isError).toBe(true);
+    expect(resultText(result)).toMatch(/last approval step/);
+    expect(approvalPosts(fetchMock)).toHaveLength(0);
+  });
+
+  it.each([
+    ["no", []],
+    ["several", [person("006", "Deputy One"), person("007", "Deputy Two")]],
+  ])(
+    "biso24_approve_requests refuses a next step with %s approvers",
+    async (_, next) => {
+      const fetchMock = approvalRoutes([awaitingMyApproval("a1", next)]);
+      const client = await connectTestClient(fetchMock);
+
+      const result = await client.callTool({
+        name: "biso24_approve_requests",
+        arguments: { request_ids: ["a1"] },
+      });
+
+      expect(result.isError).toBe(true);
+      expect(resultText(result)).toMatch(/unclear who to forward it to/);
+      expect(approvalPosts(fetchMock)).toHaveLength(0);
+    },
+  );
+
   it("biso24_list_request_types paginates client-side", async () => {
     const fetchMock = envelopeFetch([
       { _id: "t1" },

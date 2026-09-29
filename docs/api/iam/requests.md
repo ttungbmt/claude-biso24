@@ -120,6 +120,34 @@ otherwise the draft it looked up beforehand.
   step `SENT`, the next `WAITING_FOR_APPROVAL`. A submitted Request can no longer be deleted; it
   can only be cancelled, through an endpoint not documented yet.
 
+## Approve requests — `POST /v1/request-employees/multiple-approvals`
+
+Approves Requests that await the logged-in employee's approval (the web app's "Duyệt"). Each
+Request moves on to its next approval step, and `approvalForNextStep` becomes that step's
+Approver. Captured from the web app approving two Requests on 2026-09-29; not yet run from Bruno
+(`bruno/iam/requests/approve-requests.bru`, tagged `write`). Wrapped as `biso24_approve_requests`.
+
+### Parameters
+
+The body is an array with one item per Request:
+
+| Name | Type | Required | Values / format | Verified |
+|---|---|---|---|---|
+| `_id` | string | yes | the Request `_id` | yes (web app) |
+| `approvalForNextStep` | object | yes? | the Approver of the step after the current one: `employeeId`, `staffCode`, `fullName`, `departmentName`, `positionName`. The web app fills it in with no picker, and it matches `approvalSteps[current + 1].approvers[0]` | yes (web app) |
+
+### Response `data`
+
+Not verified.
+
+### Notes
+
+- Unknown: the body for a Request at its last step (no next step), what happens with a Request
+  that does not await me, and whether one bad item fails the whole batch. Until these are verified,
+  `biso24_approve_requests` approves only Requests found in `GET ?type=RESPONSIBLE`, forwarded to
+  a next step with exactly one approver. It refuses the whole call otherwise (ADR 0006).
+- Rejecting is a separate endpoint, not documented yet.
+
 ## List request types — `GET /v1/request-managements`
 
 The Request types configured for the organization. Not paginated.
@@ -192,7 +220,10 @@ Each item in `data`:
 | `employeeId` | string | the requester's id |
 | `employeeDetail` | object | the requester: `employeeId`, `staffCode`, `fullName`, `departmentId`, `departmentName`, `positionId`, `positionName`, `avatar`, `gender` |
 | `status` | string | `NEW`, `PROCESSING`, `APPROVED`, `REJECTED` |
-| `approvalSteps` | array | `stepIndex`, `stepTitle`, `status` (`NEW`, `SENT`, `WAITING_FOR_APPROVAL`, `APPROVED`, `REJECTED`, `NOT_STARTED`), `conditions` |
+| `approvalSteps` | array | `stepIndex`, `stepTitle`, `status` (`NEW`, `SENT`, `WAITING_FOR_APPROVAL`, `APPROVED`, `REJECTED`, `NOT_STARTED`), `conditions`, plus the fields below |
+| `approvalSteps[].approvers` | array | who acts at that step, resolved when the Request is filed, even for steps `NOT_STARTED`: `employeeId`, `staffCode`, `fullName`, `departmentName`, `positionName`, `avatar`, `companyEmail`. Step 1 ("Tạo đơn") lists the requester |
+| `approvalSteps[].approvalConfig` | string or null | how the approvers were picked: `BY_SELECTED` (the requester picked them), `BY_POSITION_LEVEL` (by `positionLevelCode`, e.g. `PHO_PHONG`, `TRUONG_PHONG`) |
+| `approvalSteps[].approvedBy` | object or null | who acted at that step, once they have |
 | `approvalForNextStep` | object or null | the next Approver (`employeeId`, `staffCode`, `fullName`); kept even on finished requests |
 | `requestData` | object | depends on the type; see below |
 | `notes` | string | |
@@ -213,5 +244,5 @@ Each item in `data`:
   history of those I approved or rejected; its `total` equals `totalPendingApproval`.
 - With `type=RESPONSIBLE`, `status=APPROVED`/`REJECTED` return 0 rows and `status=NEW` returned
   more rows than no filter (16 vs 15). Don't filter that list by status.
-- Other `request-employees` endpoints exist in the web app (`GET /{id}`, update, send,
-  approve, reject, cancel, `multiple-approvals`, `dashboards`); not documented yet.
+- Other `request-employees` endpoints exist in the web app (`GET /{id}`, update, approve,
+  reject, cancel, `dashboards`); not documented yet.

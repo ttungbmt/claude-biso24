@@ -1,5 +1,7 @@
 # Write tools act only on the logged-in employee's own data
 
+Superseded in part by ADR 0006, which allows approving Requests that await the Logged-in employee.
+
 Until now the plugin was read-only: it never created, changed or approved anything in Biso24. We now
 add Write tools, starting with Request deletion, but only on the Logged-in employee's own data:
 never another Employee's Request, and no approving or rejecting on anyone's behalf.

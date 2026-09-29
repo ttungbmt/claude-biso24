@@ -11,7 +11,12 @@ export interface EmployeeRequest {
     staffCode?: string;
     departmentName?: string;
   };
-  approvalSteps?: { stepTitle?: string; status?: string }[];
+  approvalSteps?: {
+    stepTitle?: string;
+    status?: string;
+    /** Who acts at this step, resolved when the Request was filed. */
+    approvers?: ApproverCandidate[];
+  }[];
   /** Shape depends on the Request type; these are the date fields seen so far. */
   requestData?: {
     /** UPDATE_ATTENDANCE */
@@ -103,6 +108,25 @@ export function submitRequest(
     { method: "PUT" },
   );
 }
+
+/**
+ * Approves Requests awaiting the logged-in employee's approval (the web app's
+ * "Duyệt"), each forwarded to `approvalForNextStep`, the approver of its next
+ * step. Callers must check that each Request awaits me (ADR 0006). The body
+ * for a Request's last step and the response shape are not verified yet.
+ */
+export function approveRequests(
+  client: Biso24Client,
+  items: { _id: string; approvalForNextStep: NextApprover }[],
+): Promise<unknown> {
+  return client.post("v1/request-employees/multiple-approvals", items);
+}
+
+/** The next step's Approver, as the web app sends it when approving. */
+export type NextApprover = Pick<
+  ApproverCandidate,
+  "employeeId" | "staffCode" | "fullName" | "departmentName" | "positionName"
+>;
 
 /** An Employee who can be picked as the next Approver when filing a Request. */
 export interface ApproverCandidate {

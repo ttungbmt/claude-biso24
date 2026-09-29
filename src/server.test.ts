@@ -12,6 +12,7 @@ describe("MCP server", () => {
     expect(client.getServerVersion()?.name).toBe("biso24-mcp-server");
     const { tools } = await client.listTools();
     expect(tools.map((t) => t.name).sort()).toEqual([
+      "biso24_approve_requests",
       "biso24_create_my_attendance_correction",
       "biso24_delete_my_request",
       "biso24_get_employee",
@@ -25,8 +26,9 @@ describe("MCP server", () => {
       "biso24_list_requests_to_approve",
       "biso24_submit_my_request",
     ]);
-    // Write tools (ADR 0005) must say so; every other tool is read-only.
+    // Write tools (ADR 0005, 0006) must say so; every other tool is read-only.
     const writeTools = [
+      "biso24_approve_requests",
       "biso24_create_my_attendance_correction",
       "biso24_delete_my_request",
       "biso24_submit_my_request",

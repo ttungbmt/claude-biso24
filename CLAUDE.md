@@ -57,7 +57,7 @@ test/helpers/     mcp-harness.ts: connectTestClient(fetchMock), envelopeFetch() 
 - Name tools `biso24_<verb>_<object>` (snake_case); `_my_` for data of the logged-in employee (identified by the token).
 - Register with `defineTool` (wraps `server.registerTool`): the handler returns data; it is JSON-serialized, truncated at `CHARACTER_LIMIT` and sent as `structuredContent`, and thrown errors become `toolError(e)`.
 - Always set `title`, `description` (say when to use / not use it), a zod `inputSchema` with `.describe()` on each field, and `annotations` (`READ_ONLY` for GET tools, `DESTRUCTIVE` for deletes).
-- Write tools act only on the logged-in employee's own data, check that before calling the API, and act on one record per call (ADR 0005).
+- Write tools act only on the logged-in employee's own data, check that before calling the API, and act on one record per call (ADR 0005). Exception: `biso24_approve_requests` approves up to 20 Requests awaiting the logged-in employee, all or nothing (ADR 0006).
 - List tools spread `paginationShape` (`limit`/`offset`) and return `has_more`/`next_offset`: use `toPageParams` + `pageMeta` for page-based endpoints, `paginate` for unpaginated ones.
 - Every new tool needs a test that calls it through `connectTestClient` with a mocked `fetch`.
 
